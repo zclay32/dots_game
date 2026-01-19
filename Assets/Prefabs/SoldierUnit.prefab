@@ -105,6 +105,6 @@ MonoBehaviour:
   attackDamage: 25
   attackRange: 5
   attackCooldown: 0.5
-  noiseRangeMultiplier: 150
-  noiseIntensity: 2
+  noiseRangeMultiplier: 2
+  noiseIntensity: 3
   noiseFalloffExponent: 1.75

@@ -46,16 +46,13 @@ public partial struct CombatSystem : ISystem
     public void OnDestroy(ref SystemState state)
     {
         // Clean up noise managers (safe to call even if already disposed)
-        NoiseEventManager.Dispose();
         NoiseEventManagerEnhanced.Dispose();
         CombatDebugEventQueue.Dispose();
     }
 
     public void OnUpdate(ref SystemState state)
     {
-        // Ensure noise managers are ready (both legacy and enhanced)
-        if (!NoiseEventManager.IsCreated)
-            NoiseEventManager.Initialize();
+        // Ensure noise manager is ready
         if (!NoiseEventManagerEnhanced.IsCreated)
             NoiseEventManagerEnhanced.Initialize();
         if (!MuzzleFlashManager.IsCreated)

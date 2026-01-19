@@ -60,9 +60,10 @@ public partial struct MoveZombiesByStateJob : IJobEntity
                 break;
 
             case ZombieCombatAIState.Chasing:
-                // Full speed toward cached target position
+                // Full speed toward target
                 if (combatState.HasTarget)
                 {
+                    // Chasing a specific entity - use cached target position
                     float2 targetPos = combatState.CachedTargetPos;
 
                     // Set target position for other systems (facing, etc.)
@@ -85,8 +86,23 @@ public partial struct MoveZombiesByStateJob : IJobEntity
                 }
                 else
                 {
-                    velocity.Value = float2.zero;
-                    targetPosition.HasTarget = false;
+                    // No entity target - chase toward WanderTarget (noise position) at full speed
+                    float2 chasePos = combatState.WanderTarget;
+                    float distanceToNoise = math.distance(currentPos, chasePos);
+
+                    if (distanceToNoise > 0.5f)
+                    {
+                        // Still moving toward noise location
+                        MoveToward(ref transform, ref velocity, ref targetPosition, currentPos,
+                            chasePos, speed.Value, DeltaTime);
+                    }
+                    else
+                    {
+                        // Arrived at noise location - stop moving
+                        // ZombieStateMachineSystem will transition to Idle when StateTimer expires
+                        velocity.Value = float2.zero;
+                        targetPosition.HasTarget = false;
+                    }
                 }
                 break;
 

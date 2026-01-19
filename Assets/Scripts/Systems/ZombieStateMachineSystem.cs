@@ -216,7 +216,7 @@ public partial struct ZombieStateUpdateJob : IJobEntity
                 break;
 
             case ZombieCombatAIState.Chasing:
-                ProcessChasingState(ref combatState, combatConfig, myPos, velocity);
+                ProcessChasingState(ref combatState, combatConfig, myPos, velocity, ref random);
                 break;
 
             case ZombieCombatAIState.WindingUp:
@@ -274,18 +274,39 @@ public partial struct ZombieStateUpdateJob : IJobEntity
 
         float distToWander = math.distance(myPos, combatState.WanderTarget);
         float distFromSpawn = math.distance(myPos, config.SpawnPosition);
+        float wanderTargetDistFromSpawn = math.distance(combatState.WanderTarget, config.SpawnPosition);
 
-        // If zombie has wandered too far from spawn, redirect back toward spawn
-        if (distFromSpawn > config.WanderRadius * 1.5f)
+        // Check if zombie is investigating something far from spawn (e.g., noise)
+        // If wander target is far from spawn, don't override it - let them investigate
+        bool isInvestigating = wanderTargetDistFromSpawn > config.WanderRadius * 2f;
+
+        if (isInvestigating)
         {
-            float2 toSpawn = math.normalizesafe(config.SpawnPosition - myPos);
-            combatState.WanderTarget = config.SpawnPosition + toSpawn * random.NextFloat(0.5f, config.WanderRadius * 0.5f);
+            // Investigating noise or other distant point - just move toward it
+            // When timer expires or arrives, will transition appropriately
+            if (distToWander < 0.5f)
+            {
+                // Arrived at investigation point - go idle here
+                combatState.State = ZombieCombatAIState.Idle;
+                combatState.StateTimer = random.NextFloat(2f, 5f);
+                return;
+            }
         }
-        else if (distToWander < 0.5f)
+        else
         {
-            // Reached current target - pick new wander target
-            float2 offset = random.NextFloat2Direction() * random.NextFloat(0.5f, config.WanderRadius);
-            combatState.WanderTarget = config.SpawnPosition + offset;
+            // Normal wandering near spawn
+            // If zombie has wandered too far from spawn, redirect back toward spawn
+            if (distFromSpawn > config.WanderRadius * 1.5f)
+            {
+                float2 toSpawn = math.normalizesafe(config.SpawnPosition - myPos);
+                combatState.WanderTarget = config.SpawnPosition + toSpawn * random.NextFloat(0.5f, config.WanderRadius * 0.5f);
+            }
+            else if (distToWander < 0.5f)
+            {
+                // Reached current target - pick new wander target
+                float2 offset = random.NextFloat2Direction() * random.NextFloat(0.5f, config.WanderRadius);
+                combatState.WanderTarget = config.SpawnPosition + offset;
+            }
         }
 
         // Countdown wander duration
@@ -298,28 +319,54 @@ public partial struct ZombieStateUpdateJob : IJobEntity
     }
 
     private void ProcessChasingState(ref ZombieCombatState combatState, ZombieCombatConfig config,
-        float2 myPos, Velocity velocity)
+        float2 myPos, Velocity velocity, ref Random random)
     {
-        if (!combatState.HasTarget) return;
-
-        // Use cached target position (updated by main thread or previous frame)
-        float2 targetPos = combatState.CachedTargetPos;
-        float distance = math.distance(myPos, targetPos);
-
-        // Check if in attack range and stopped
-        bool inRange = distance <= config.AttackRange * 1.1f;
-        bool stopped = math.lengthsq(velocity.Value) < 0.01f;
-
-        if (inRange && stopped)
+        if (combatState.HasTarget)
         {
-            if (combatState.HasEngagedTarget)
+            // Chasing a specific entity target - use cached target position
+            float2 targetPos = combatState.CachedTargetPos;
+            float distance = math.distance(myPos, targetPos);
+
+            // Check if in attack range and stopped
+            bool inRange = distance <= config.AttackRange * 1.1f;
+            bool stopped = math.lengthsq(velocity.Value) < 0.01f;
+
+            if (inRange && stopped)
             {
-                combatState.State = ZombieCombatAIState.Attacking;
+                if (combatState.HasEngagedTarget)
+                {
+                    combatState.State = ZombieCombatAIState.Attacking;
+                }
+                else
+                {
+                    combatState.State = ZombieCombatAIState.WindingUp;
+                    combatState.StateTimer = config.AttackWindup;
+                }
             }
-            else
+        }
+        else
+        {
+            // Chasing toward a position (noise investigation at full speed)
+            // No entity target - just moving toward WanderTarget
+            float2 chasePos = combatState.WanderTarget;
+            float distanceToPos = math.distance(myPos, chasePos);
+
+            // Check if arrived at the noise position
+            if (distanceToPos < 0.5f)
             {
-                combatState.State = ZombieCombatAIState.WindingUp;
-                combatState.StateTimer = config.AttackWindup;
+                // Arrived at noise location - go idle here (new "home" position)
+                combatState.State = ZombieCombatAIState.Idle;
+                combatState.StateTimer = random.NextFloat(2f, 5f);
+                return;
+            }
+
+            // Countdown chase timer - if it expires before arrival, give up
+            combatState.StateTimer -= DeltaTime;
+            if (combatState.StateTimer <= 0)
+            {
+                // Chase timeout - go idle at current position
+                combatState.State = ZombieCombatAIState.Idle;
+                combatState.StateTimer = random.NextFloat(2f, 5f);
             }
         }
     }

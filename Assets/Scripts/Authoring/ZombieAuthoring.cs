@@ -31,6 +31,9 @@ public class ZombieAuthoring : MonoBehaviour
     public float noiseSensitivityMultiplier = 1.0f;  // 1.0 = normal, 2.0 = extra sensitive, 0.5 = deaf
     public float minActivationProbability = 0.0f;    // Minimum chance to react
     public float maxActivationProbability = 1.0f;    // Maximum chance to react
+    [Tooltip("Chance that an activated zombie will chase at full speed toward the noise instead of wandering slowly (0.1 = 10%)")]
+    [Range(0f, 1f)]
+    public float aggroProbability = 0.1f;            // Chance to chase (fast) vs wander (slow) toward noise
     
     class Baker : Baker<ZombieAuthoring>
     {
@@ -150,7 +153,8 @@ public class ZombieAuthoring : MonoBehaviour
             {
                 SensitivityMultiplier = authoring.noiseSensitivityMultiplier,
                 MinActivationProbability = authoring.minActivationProbability,
-                MaxActivationProbability = authoring.maxActivationProbability
+                MaxActivationProbability = authoring.maxActivationProbability,
+                AggroProbability = authoring.aggroProbability
             });
 
             // Track last hit direction for death effects

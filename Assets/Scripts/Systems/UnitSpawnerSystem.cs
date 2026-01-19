@@ -44,11 +44,11 @@ public partial struct UnitSpawnerSystem : ISystem
                 );
                 
                 ecb.SetComponent(unit, LocalTransform.FromPosition(position));
-                
+
                 // Random speed
                 float speed = random.NextFloat(spawnerData.MinSpeed, spawnerData.MaxSpeed);
                 ecb.SetComponent(unit, new MoveSpeed { Value = speed });
-                
+
                 // Random initial target
                 float targetAngle = random.NextFloat(0f, math.PI * 2f);
                 float targetDist = random.NextFloat(5f, spawnerData.SpawnRadius);
@@ -60,6 +60,8 @@ public partial struct UnitSpawnerSystem : ISystem
                     ),
                     HasTarget = true
                 });
+
+                // Note: ZombieSpawnPositionFixupSystem will fix SpawnPosition after spawning
             }
         }
         
