@@ -111,6 +111,60 @@ The modular architecture makes it straightforward to add:
 
 See `CLAUDE.md` for detailed documentation on the codebase architecture and patterns.
 
+## Roadmap
+
+This project is in active development. Below is the feature roadmap showing current progress and planned additions.
+
+### Phase 1: Core Unit Mechanics (Current)
+- [x] Unit selection (box select, click select, multi-select)
+- [x] Movement and pathfinding (A* with flocking)
+- [x] Combat system (ranged and melee)
+- [x] Health system with visual feedback
+- [x] Noise/alert system for enemy AI
+- [x] GPU-instanced rendering for large unit counts
+- [ ] Unit formations and group behaviors
+- [ ] Line of sight and fog of war
+
+### Phase 2: World & Environment
+- [ ] Isometric grid layout
+- [ ] Terrain types with movement modifiers
+- [ ] Obstacles and environmental hazards
+- [ ] Day/night cycle affecting gameplay
+- [ ] Minimap with unit indicators
+
+### Phase 3: Buildings & Defenses
+- [ ] Building placement system
+- [ ] Defensive structures (walls, towers, traps)
+- [ ] Unit production buildings
+- [ ] Building health and destruction
+- [ ] Repair mechanics
+
+### Phase 4: Economy & Resources
+- [ ] Resource nodes (wood, stone, iron, etc.)
+- [ ] Worker units and resource gathering
+- [ ] Resource storage and management
+- [ ] Supply chains and logistics
+
+### Phase 5: Progression Systems
+- [ ] Technology/research tree
+- [ ] Unit upgrades and veterancy
+- [ ] Unlockable buildings and units
+- [ ] Difficulty scaling
+
+### Phase 6: Wave & Threat Systems
+- [ ] Wave spawning system
+- [ ] Escalating difficulty between waves
+- [ ] Special enemy types and bosses
+- [ ] Directional threat indicators
+- [ ] Victory and defeat conditions
+
+### Phase 7: Polish & Quality of Life
+- [ ] Save/load system
+- [ ] Audio system (music, SFX)
+- [ ] Particle effects for combat and abilities
+- [ ] UI/UX improvements
+- [ ] Tutorial and onboarding
+
 ## Documentation
 
 - [CLAUDE.md](CLAUDE.md) - Comprehensive codebase documentation
