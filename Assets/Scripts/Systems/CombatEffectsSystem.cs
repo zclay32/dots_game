@@ -22,8 +22,6 @@ public partial struct CombatEffectsSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         // Ensure managers are ready
-        if (!NoiseEventManager.IsCreated)
-            NoiseEventManager.Initialize();
         if (!NoiseEventManagerEnhanced.IsCreated)
             NoiseEventManagerEnhanced.Initialize();
         if (!MuzzleFlashManager.IsCreated)
@@ -33,8 +31,8 @@ public partial struct CombatEffectsSystem : ISystem
 
         // Process soldiers that just attacked (cooldown was just set)
         // We identify "just attacked" by cooldown being near the max value
-        foreach (var (combat, target, transform) in
-            SystemAPI.Query<RefRO<Combat>, RefRO<CombatTarget>, RefRO<LocalTransform>>()
+        foreach (var (combat, noiseConfig, target, transform) in
+            SystemAPI.Query<RefRO<Combat>, RefRO<GunshotNoiseConfig>, RefRO<CombatTarget>, RefRO<LocalTransform>>()
                 .WithAll<PlayerUnit>())
         {
             // Check if this soldier just attacked (cooldown was just reset)
@@ -59,10 +57,15 @@ public partial struct CombatEffectsSystem : ISystem
             float2 targetPos = new float2(targetTransform.Position.x, targetTransform.Position.y);
             float2 toTarget = math.normalizesafe(targetPos - myPos);
 
-            // Create noise events
-            float noiseRadius = combat.ValueRO.AttackRange * 15f;  // 15x range for noise
-            NoiseEventManagerEnhanced.CreateNoise(myPos, noiseRadius, 1.5f, 1.5f);
-            NoiseEventManager.CreateNoise(myPos, noiseRadius);
+            // Create noise events using per-soldier noise configuration
+            float noiseRadius = combat.ValueRO.AttackRange * noiseConfig.ValueRO.RangeMultiplier;
+            float intensity = noiseConfig.ValueRO.Intensity;
+            float falloff = noiseConfig.ValueRO.FalloffExponent;
+
+            NoiseEventManagerEnhanced.CreateNoise(myPos, noiseRadius, intensity, falloff);
+
+            // Queue visualization for debugging
+            NoiseVisualizationManager.QueueVisualization(myPos, noiseRadius, intensity);
 
             // Create muzzle flash
             MuzzleFlashManager.CreateFlash(myPos, toTarget);

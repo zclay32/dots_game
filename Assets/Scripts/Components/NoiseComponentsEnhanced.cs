@@ -40,6 +40,7 @@ public struct NoiseSensitivity : IComponentData
     public float SensitivityMultiplier;  // 1.0 = normal, 2.0 = extra sensitive, 0.5 = deaf
     public float MinActivationProbability;  // Minimum chance to react (even at max range)
     public float MaxActivationProbability;  // Maximum chance to react (caps probability)
+    public float AggroProbability;          // Chance to chase (fast) vs wander (slow) toward noise (0.1 = 10% chase)
 }
 
 /// <summary>

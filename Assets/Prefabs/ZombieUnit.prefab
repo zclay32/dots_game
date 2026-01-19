@@ -111,6 +111,6 @@ MonoBehaviour:
   aggroRadius: 15
   wanderRadius: 2
   wanderSpeedMultiplier: 0.25
-  noiseSensitivityMultiplier: 1
+  noiseSensitivityMultiplier: 2
   minActivationProbability: 0
   maxActivationProbability: 1

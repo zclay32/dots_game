@@ -34,9 +34,7 @@ public partial struct CombatSystemOptimized : ISystem
         // Complete jobs before applying damage
         state.Dependency.Complete();
 
-        // Ensure noise managers are ready
-        if (!NoiseEventManager.IsCreated)
-            NoiseEventManager.Initialize();
+        // Ensure noise manager is ready
         if (!NoiseEventManagerEnhanced.IsCreated)
             NoiseEventManagerEnhanced.Initialize();
 
@@ -114,8 +112,8 @@ public partial struct CombatSystemOptimized : ISystem
                     falloffExponent: noiseConfig.ValueRO.FalloffExponent
                 );
 
-                // Also create legacy noise for backward compatibility (remove when migrated)
-                NoiseEventManager.CreateNoise(myPos, maxNoiseRadius);
+                // Queue visualization for debugging
+                NoiseVisualizationManager.QueueVisualization(myPos, maxNoiseRadius, noiseConfig.ValueRO.Intensity);
 
                 float2 direction = math.normalizesafe(targetPos - myPos);
                 MuzzleFlashManager.CreateFlash(myPos, direction);
