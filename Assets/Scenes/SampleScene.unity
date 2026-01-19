@@ -425,6 +425,7 @@ GameObject:
   - component: {fileID: 1666129102}
   - component: {fileID: 1666129104}
   - component: {fileID: 1666129105}
+  - component: {fileID: 1666129106}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -514,13 +515,27 @@ MonoBehaviour:
   enemyParticleColor: {r: 0.8, g: 0.1, b: 0.1, a: 1}
   soldierParticleColor: {r: 0.1, g: 0.3, b: 0.8, a: 1}
   particleCount: 8
-  particleSpeed: 4
+  particleSpeed: 10
   particleSpeedVariance: 2
-  particleDuration: 0.4
-  particleStartScale: 0.15
+  particleDuration: 1
+  particleStartScale: 1
   particleEndScale: 0.05
   particleSpreadAngle: 60
   knockbackStrength: 0.3
+--- !u!114 &1666129106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666129101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 053c36ef6b83ff34583c832c596ca80e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableLogging: 1
+  logInterval: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

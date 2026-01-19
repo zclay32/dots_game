@@ -74,3 +74,6 @@ Thumbs.db
 .plastic/
 .plastic/
 ignore.conf
+
+# Claude Code local settings
+.claude/
