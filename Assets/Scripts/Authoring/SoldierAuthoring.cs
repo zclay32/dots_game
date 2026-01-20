@@ -115,6 +115,9 @@ public class SoldierAuthoring : MonoBehaviour
 
             // Track last hit direction for death effects
             AddComponent(entity, new LastHitDirection { Direction = float2.zero });
+
+            // Separation force (used by two-pass separation system)
+            AddComponent(entity, new SeparationForce { Force = float2.zero });
         }
     }
 }
