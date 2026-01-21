@@ -93,9 +93,15 @@ public partial struct ZombieTargetSearchJob : IJobEntity
         in LocalTransform transform,
         in EnemyUnit enemyTag)
     {
-        // Only search for zombies in Idle or Wandering state
-        if (combatState.State != ZombieCombatAIState.Idle &&
-            combatState.State != ZombieCombatAIState.Wandering)
+        // Search for targets in these states:
+        // - Idle: Standing still, looking for targets
+        // - Wandering: Moving slowly, can still detect targets
+        // - Chasing without target: Moving toward a position (noise or wave spawn), can acquire target
+        bool shouldSearch = combatState.State == ZombieCombatAIState.Idle ||
+                           combatState.State == ZombieCombatAIState.Wandering ||
+                           (combatState.State == ZombieCombatAIState.Chasing && !combatState.HasTarget);
+
+        if (!shouldSearch)
             return;
 
         float2 myPos = new float2(transform.Position.x, transform.Position.y);
