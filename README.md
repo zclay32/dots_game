@@ -152,11 +152,11 @@ This project is in active development. Below is the feature roadmap showing curr
 - [ ] Difficulty scaling
 
 ### Phase 6: Wave & Threat Systems
-- [ ] Wave spawning system
-- [ ] Escalating difficulty between waves
+- [x] Wave spawning system
+- [x] Escalating difficulty between waves (linear scaling)
 - [ ] Special enemy types and bosses
-- [ ] Directional threat indicators
-- [ ] Victory and defeat conditions
+- [x] Directional threat indicators (UI announcement)
+- [x] Victory and defeat conditions
 
 ### Phase 7: Polish & Quality of Life
 - [ ] Save/load system
@@ -170,6 +170,7 @@ This project is in active development. Below is the feature roadmap showing curr
 - [CLAUDE.md](CLAUDE.md) - Comprehensive codebase documentation
 - [NOISE_SYSTEM_ENHANCED.md](NOISE_SYSTEM_ENHANCED.md) - Probabilistic alert system details
 - [OPTIMIZATION_SUMMARY.md](OPTIMIZATION_SUMMARY.md) - Performance optimization techniques
+- [WAVE_SYSTEM_PRD.md](WAVE_SYSTEM_PRD.md) - Wave spawning system design and implementation
 
 ## License
 
