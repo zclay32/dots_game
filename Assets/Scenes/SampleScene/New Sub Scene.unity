@@ -166,6 +166,60 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &485276773
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 485276775}
+  - component: {fileID: 485276774}
+  m_Layer: 0
+  m_Name: WaveSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &485276774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 485276773}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3cc17075698aa14bbcacc8bcd312d70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  totalWaves: 8
+  timeBetweenWaves: 15
+  zombiePrefab: {fileID: 7217014520157834792, guid: 2c8f393768dfaec48baedffecb982653, type: 3}
+  baseZombiesPerWave: 20
+  zombiesPerWaveIncrease: 15
+  spawnBatchSize: 4
+  spawnBatchInterval: 0.5
+  mapRadius: 40
+  mapCenter: {x: 0, y: 0}
+  spawnSpread: 2
+--- !u!4 &485276775
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 485276773}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &795734300
 GameObject:
   m_ObjectHideFlags: 0
@@ -303,5 +357,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 795734301}
   - {fileID: 1915054425}
+  - {fileID: 485276775}
   - {fileID: 136241596}
   - {fileID: 2079939438}
