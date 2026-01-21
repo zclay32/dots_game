@@ -276,3 +276,26 @@ The existing `CombatSpawnerSystem` spawns zombies at game start. **Keep this beh
 4. Update `ZombieSpawnPositionFixupSystem.cs` - handle wave spawns (run continuously)
 5. Create `WaveUIManager.cs` - UI display
 6. Test and tune parameters
+
+---
+
+## Implementation Status
+
+**Completed** - All core features implemented and tested.
+
+### Design Decisions
+
+**Wave zombies and noise:** Wave zombies spawn in `Chasing` state (moving at full speed toward map center) with `HasTarget = false`. This means:
+- They move at full speed toward the center (not slow wander speed)
+- They CAN detect nearby players via `ZombieTargetSearchJob` (which now also searches `Chasing` zombies without a target)
+- They do NOT react to gunfire noise (noise system only activates `Idle`/`Wandering` zombies)
+
+This is intentional - wave zombies are already aggressively rushing the center, so reacting to noise would be redundant. They will still acquire player targets if soldiers get close enough.
+
+**Wave completion tracking:** Uses a `WaveSpawnedZombie` tag component to track only wave-spawned zombies. Initial map zombies (from `CombatSpawnerSystem`) don't count toward wave completion.
+
+### Future Enhancements (Deferred)
+
+- **Sound effects**: Audio cues for wave start/direction announcements - deferred for later audio pass
+- **Visual spawn indicator**: Direction arrow on minimap - deferred until minimap feature is implemented
+- **Difficulty tuning**: Current values (20 base + 15 per wave, 15s between waves) are placeholder for testing. Will be rebalanced once more game systems are in place to give players meaningful activities between waves
