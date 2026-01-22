@@ -119,6 +119,63 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &2545171
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 380023137597155167, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_Name
+      value: SoldierUnit
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.2791762
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -2.5088584
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.37422895
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7836047227936416036, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
 --- !u!1 &485276773
 GameObject:
   m_ObjectHideFlags: 0
@@ -579,6 +636,7 @@ GameObject:
   - component: {fileID: 1241206873}
   - component: {fileID: 1241206872}
   - component: {fileID: 1241206871}
+  - component: {fileID: 1241206874}
   m_Layer: 0
   m_Name: GridManagers
   m_TagString: Untagged
@@ -613,7 +671,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ae8199ef1f4af6469ab8d40935397c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cellSize: {x: 2, y: 1.5, z: 0}
+  cellSize: {x: 2, y: 1, z: 0}
   gridRadius: 40
   groundTile: {fileID: 11400000, guid: c8872fce2a9e05f44be5a971d5fb4277, type: 2}
   terrainSortingLayer: Default
@@ -623,6 +681,8 @@ MonoBehaviour:
   gizmoGridColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
   gizmoBoundaryColor: {r: 1, g: 1, b: 0, a: 0.8}
   gizmoGridStep: 5
+  gizmoPreviewSprite: {fileID: 21300000, guid: d84bf55f2dccae847b9578dec2ea8611, type: 3}
+  gizmoPreviewRadius: 1
 --- !u!4 &1241206873
 Transform:
   m_ObjectHideFlags: 0
@@ -638,6 +698,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1241206874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241206870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9898202aaed9ccf4281264691bb4bb08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1666129101
 GameObject:
   m_ObjectHideFlags: 0
@@ -758,3 +830,4 @@ SceneRoots:
   - {fileID: 1240768603}
   - {fileID: 1241206873}
   - {fileID: 973350631}
+  - {fileID: 2545171}

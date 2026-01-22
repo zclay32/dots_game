@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: FogHiddenTile
   m_EditorClassIdentifier: 
   color: {r: 1, g: 1, b: 1, a: 1}
-  sprite: {fileID: 0}
+  sprite: {fileID: 21300000, guid: 766ac92506b2b464c8c528f861e8fb38, type: 3}
