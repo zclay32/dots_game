@@ -285,7 +285,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2141117f2710b1545bc1cbec98d09de2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameSceneName: SampleScene
+  gameSceneName: GameScene
   soldierCount: 100
   zombieCount: 10000
   mapRadius: 80

@@ -9,7 +9,7 @@ public class MainMenuManager : MonoBehaviour
 {
     [Header("Game Configuration")]
     [Tooltip("Name of the game scene to load")]
-    public string gameSceneName = "SampleScene";
+    public string gameSceneName = "GameScene";
 
     [Tooltip("Number of soldiers to spawn")]
     public int soldierCount = 100;
