@@ -119,6 +119,52 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &9264488
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9264490}
+  - component: {fileID: 9264489}
+  m_Layer: 0
+  m_Name: PrefabLibrary
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &9264489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9264488}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dff5fab31663bed418c7d73811169428, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soldierPrefab: {fileID: 380023137597155167, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
+  zombiePrefab: {fileID: 7217014520157834792, guid: 2c8f393768dfaec48baedffecb982653, type: 3}
+--- !u!4 &9264490
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9264488}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &136241594
 GameObject:
   m_ObjectHideFlags: 0
@@ -197,13 +243,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   totalWaves: 8
   timeBetweenWaves: 15
-  zombiePrefab: {fileID: 7217014520157834792, guid: 2c8f393768dfaec48baedffecb982653, type: 3}
   baseZombiesPerWave: 20
   zombiesPerWaveIncrease: 15
   spawnBatchSize: 4
   spawnBatchInterval: 0.5
-  mapRadius: 40
-  mapCenter: {x: 0, y: 0}
   spawnSpread: 2
 --- !u!4 &485276775
 Transform:
@@ -220,7 +263,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &795734300
+--- !u!1 &1707129391
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -228,76 +271,42 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 795734301}
+  - component: {fileID: 1707129393}
+  - component: {fileID: 1707129392}
   m_Layer: 0
-  m_Name: Subscene
+  m_Name: GameConfig
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &795734301
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 795734300}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.39147663, y: -0.81637037, z: 0.071153514}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1915054423
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1915054425}
-  - component: {fileID: 1915054424}
-  m_Layer: 0
-  m_Name: CombatSpawner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1915054424
+--- !u!114 &1707129392
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1915054423}
+  m_GameObject: {fileID: 1707129391}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b444e67594512e64c97816def177030a, type: 3}
+  m_Script: {fileID: 11500000, guid: 44eac28540a0549489a56fa4d6f90475, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  soldierPrefab: {fileID: 380023137597155167, guid: bb664463fcd0c34468b5ed2ad48ed7f1, type: 3}
-  soldierCount: 100
-  soldierSpawnRadius: 10
-  soldierSpawnCenter: {x: 0, y: 0}
-  zombiePrefab: {fileID: 7217014520157834792, guid: 2c8f393768dfaec48baedffecb982653, type: 3}
-  zombieCount: 10000
-  zombieSpawnRadius: 150
-  zombieMinDistance: 30
---- !u!4 &1915054425
+  defaultSoldierCount: 100
+  defaultZombieCount: 10000
+  defaultMapRadius: 80
+  defaultZombieMinDistance: 15
+  defaultMapCenter: {x: 0, y: 0}
+--- !u!4 &1707129393
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1915054423}
+  m_GameObject: {fileID: 1707129391}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -0.8501093, y: -1.4428437, z: 0.001323841}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -355,8 +364,8 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 795734301}
-  - {fileID: 1915054425}
   - {fileID: 485276775}
   - {fileID: 136241596}
   - {fileID: 2079939438}
+  - {fileID: 9264490}
+  - {fileID: 1707129393}

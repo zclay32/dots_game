@@ -26,18 +26,16 @@ public enum SpawnDirection : byte
 
 /// <summary>
 /// Wave system configuration (set once via authoring)
+/// Note: ZombiePrefab, MapRadius, and MapCenter are now in PrefabLibrary and GameConfig singletons
 /// </summary>
 public struct WaveConfig : IComponentData
 {
-    public Entity ZombiePrefab;
     public int TotalWaves;
     public float TimeBetweenWaves;
     public int BaseZombiesPerWave;
     public int ZombiesPerWaveIncrease;
     public int SpawnBatchSize;
     public float SpawnBatchInterval;
-    public float MapRadius;
-    public float2 MapCenter;
     public float SpawnSpread;
 }
 

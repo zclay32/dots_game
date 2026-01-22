@@ -5,6 +5,8 @@ using UnityEngine;
 /// <summary>
 /// Authoring component for wave spawner configuration.
 /// Add to a GameObject in your subscene to enable the wave system.
+///
+/// Note: Zombie prefab and map settings are now in PrefabLibraryAuthoring and GameConfigAuthoring.
 /// </summary>
 public class WaveSpawnerAuthoring : MonoBehaviour
 {
@@ -16,9 +18,6 @@ public class WaveSpawnerAuthoring : MonoBehaviour
     public float timeBetweenWaves = 15f;
 
     [Header("Zombie Scaling")]
-    [Tooltip("Zombie prefab to spawn")]
-    public GameObject zombiePrefab;
-
     [Tooltip("Number of zombies in wave 1")]
     public int baseZombiesPerWave = 20;
 
@@ -32,13 +31,6 @@ public class WaveSpawnerAuthoring : MonoBehaviour
     [Tooltip("Seconds between each batch spawn")]
     public float spawnBatchInterval = 0.5f;
 
-    [Header("Map Settings")]
-    [Tooltip("Distance from center to map edge (spawn location)")]
-    public float mapRadius = 40f;
-
-    [Tooltip("Center point that zombies aggro toward")]
-    public Vector2 mapCenter = Vector2.zero;
-
     [Tooltip("Random spread for zombie positions within batch")]
     public float spawnSpread = 2f;
 
@@ -49,17 +41,15 @@ public class WaveSpawnerAuthoring : MonoBehaviour
             var entity = GetEntity(TransformUsageFlags.None);
 
             // Add configuration component
+            // Note: ZombiePrefab, MapRadius, MapCenter now come from PrefabLibrary and GameConfig singletons
             AddComponent(entity, new WaveConfig
             {
-                ZombiePrefab = GetEntity(authoring.zombiePrefab, TransformUsageFlags.Dynamic),
                 TotalWaves = authoring.totalWaves,
                 TimeBetweenWaves = authoring.timeBetweenWaves,
                 BaseZombiesPerWave = authoring.baseZombiesPerWave,
                 ZombiesPerWaveIncrease = authoring.zombiesPerWaveIncrease,
                 SpawnBatchSize = authoring.spawnBatchSize,
                 SpawnBatchInterval = authoring.spawnBatchInterval,
-                MapRadius = authoring.mapRadius,
-                MapCenter = new float2(authoring.mapCenter.x, authoring.mapCenter.y),
                 SpawnSpread = authoring.spawnSpread
             });
 
