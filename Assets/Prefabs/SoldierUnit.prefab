@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7836047227936416036}
   - component: {fileID: 9065239226658152821}
   - component: {fileID: 1230686414198114626}
+  - component: {fileID: 2557310005719024805}
   m_Layer: 0
   m_Name: SoldierUnit
   m_TagString: Untagged
@@ -108,3 +109,23 @@ MonoBehaviour:
   noiseRangeMultiplier: 2
   noiseIntensity: 3
   noiseFalloffExponent: 1.75
+  visionRadius: 10
+--- !u!114 &2557310005719024805
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 380023137597155167}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 416db0cb66b5c8c469c3e3dd02add14a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showVisionCircle: 1
+  showCellCenters: 1
+  visionRadius: 10
+  cellsToShow: 10
+  visionCircleColor: {r: 0, g: 1, b: 0, a: 0.5}
+  cellCenterColor: {r: 1, g: 1, b: 0, a: 0.8}
+  visibleCellColor: {r: 0, g: 1, b: 0, a: 0.3}

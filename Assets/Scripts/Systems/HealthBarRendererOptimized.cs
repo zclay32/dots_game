@@ -132,7 +132,8 @@ public class HealthBarRendererOptimized : MonoBehaviour
         float minY = camPos.y - camHeight / 2f - 1f;
         float maxY = camPos.y + camHeight / 2f + 1f;
 
-        // Try to use optimized components first
+        // Get entities so we can check for FogCulled component
+        var entities = _healthQuery.ToEntityArray(Allocator.Temp);
         var healthCurrents = _healthQuery.ToComponentDataArray<HealthCurrent>(Allocator.Temp);
 
         if (healthCurrents.Length > 0)
@@ -144,11 +145,17 @@ public class HealthBarRendererOptimized : MonoBehaviour
 
             for (int i = 0; i < healthCurrents.Length; i++)
             {
+                bool isPlayer = factions[i].Value == FactionType.Player;
+
+                // Skip enemies that are fog culled (hidden by fog of war)
+                if (!isPlayer && _entityManager.HasComponent<FogCulled>(entities[i]))
+                    continue;
+
                 ProcessHealthBar(
                     healthCurrents[i].Value,
                     healthMaxs[i].Value,
                     transforms[i].Position,
-                    factions[i].Value == FactionType.Player,
+                    isPlayer,
                     minX, maxX, minY, maxY
                 );
             }
@@ -169,11 +176,17 @@ public class HealthBarRendererOptimized : MonoBehaviour
 
             for (int i = 0; i < healths.Length; i++)
             {
+                bool isPlayer = factions[i].Value == FactionType.Player;
+
+                // Skip enemies that are fog culled (hidden by fog of war)
+                if (!isPlayer && _entityManager.HasComponent<FogCulled>(entities[i]))
+                    continue;
+
                 ProcessHealthBar(
                     healths[i].Current,
                     healths[i].Max,
                     transforms[i].Position,
-                    factions[i].Value == FactionType.Player,
+                    isPlayer,
                     minX, maxX, minY, maxY
                 );
             }
@@ -182,6 +195,8 @@ public class HealthBarRendererOptimized : MonoBehaviour
             transforms.Dispose();
             factions.Dispose();
         }
+
+        entities.Dispose();
 
         // Draw using instanced rendering (2 draw calls total)
         if (_backgroundMatrices.Length > 0)

@@ -568,6 +568,76 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1241206870
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1241206873}
+  - component: {fileID: 1241206872}
+  - component: {fileID: 1241206871}
+  m_Layer: 0
+  m_Name: GridManagers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1241206871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241206870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e82731291289778438a6d6b9c1e1e1f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hiddenTile: {fileID: 11400000, guid: 3d4d8ee3fe3ae0d42891dfd1b9637564, type: 2}
+  exploredTile: {fileID: 11400000, guid: 76b66f29d7e3c5e428cf04e6c3794838, type: 2}
+  gridManager: {fileID: 1241206872}
+--- !u!114 &1241206872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241206870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ae8199ef1f4af6469ab8d40935397c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cellSize: {x: 2, y: 1.5, z: 0}
+  gridRadius: 40
+  groundTile: {fileID: 11400000, guid: c8872fce2a9e05f44be5a971d5fb4277, type: 2}
+  terrainSortingLayer: Default
+  terrainOrderInLayer: -100
+  fogSortingLayer: Default
+  fogOrderInLayer: 100
+  gizmoGridColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
+  gizmoBoundaryColor: {r: 1, g: 1, b: 0, a: 0.8}
+  gizmoGridStep: 5
+--- !u!4 &1241206873
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241206870}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1666129101
 GameObject:
   m_ObjectHideFlags: 0
@@ -686,4 +756,5 @@ SceneRoots:
   - {fileID: 1078480141}
   - {fileID: 485276775}
   - {fileID: 1240768603}
+  - {fileID: 1241206873}
   - {fileID: 973350631}
