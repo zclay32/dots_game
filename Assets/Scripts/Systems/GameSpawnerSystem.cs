@@ -1,0 +1,115 @@
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
+
+/// <summary>
+/// System that spawns soldiers and zombies based on GameConfig settings.
+/// Triggered by SpawnRequest.ShouldSpawn = true (set by GameSceneBootstrap).
+/// Replaces the old CombatSpawnerSystem with configurable spawn counts.
+/// </summary>
+public partial struct GameSpawnerSystem : ISystem
+{
+    private bool _hasSpawned;
+
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<GameConfig>();
+        state.RequireForUpdate<PrefabLibrary>();
+        state.RequireForUpdate<SpawnRequest>();
+    }
+
+    public void OnUpdate(ref SystemState state)
+    {
+        // Check if spawning was requested
+        var spawnRequest = SystemAPI.GetSingleton<SpawnRequest>();
+        if (!spawnRequest.ShouldSpawn || _hasSpawned)
+            return;
+
+        _hasSpawned = true;
+
+        var config = SystemAPI.GetSingleton<GameConfig>();
+        var prefabs = SystemAPI.GetSingleton<PrefabLibrary>();
+
+        var ecb = new EntityCommandBuffer(Allocator.Temp);
+        var random = new Random((uint)System.DateTime.Now.Ticks);
+
+        // Spawn soldiers clustered in center
+        SpawnSoldiers(ref ecb, ref random, config, prefabs);
+
+        // Spawn zombies biased toward edges
+        SpawnZombies(ref ecb, ref random, config, prefabs);
+
+        ecb.Playback(state.EntityManager);
+        ecb.Dispose();
+
+        // Clear spawn request
+        var spawnEntity = SystemAPI.GetSingletonEntity<SpawnRequest>();
+        state.EntityManager.SetComponentData(spawnEntity, new SpawnRequest { ShouldSpawn = false });
+
+        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.SoldierCount} soldiers and {config.InitialZombieCount} zombies");
+    }
+
+    private void SpawnSoldiers(ref EntityCommandBuffer ecb, ref Random random, GameConfig config, PrefabLibrary prefabs)
+    {
+        // Spawn soldiers in a tight cluster around center
+        const float soldierSpawnRadius = 5f;
+
+        for (int i = 0; i < config.SoldierCount; i++)
+        {
+            var soldier = ecb.Instantiate(prefabs.SoldierPrefab);
+
+            // Random position in circle around center
+            float angle = random.NextFloat(0f, math.PI * 2f);
+            float distance = random.NextFloat(0f, soldierSpawnRadius);
+
+            float3 position = new float3(
+                config.MapCenter.x + math.cos(angle) * distance,
+                config.MapCenter.y + math.sin(angle) * distance,
+                0f
+            );
+
+            ecb.SetComponent(soldier, LocalTransform.FromPosition(position));
+
+            // Soldiers start without a target
+            ecb.SetComponent(soldier, new TargetPosition { HasTarget = false });
+        }
+
+        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.SoldierCount} soldiers in center (radius {soldierSpawnRadius})");
+    }
+
+    private void SpawnZombies(ref EntityCommandBuffer ecb, ref Random random, GameConfig config, PrefabLibrary prefabs)
+    {
+        // Spawn zombies between min distance and map radius, biased toward edges
+        for (int i = 0; i < config.InitialZombieCount; i++)
+        {
+            var zombie = ecb.Instantiate(prefabs.ZombiePrefab);
+
+            // Random angle
+            float angle = random.NextFloat(0f, math.PI * 2f);
+
+            // Use sqrt to bias toward outer edge
+            // t=0 -> minDistance, t=1 -> mapRadius
+            float t = math.sqrt(random.NextFloat(0f, 1f));
+            float distance = math.lerp(config.ZombieMinDistance, config.MapRadius, t);
+
+            float3 position = new float3(
+                config.MapCenter.x + math.cos(angle) * distance,
+                config.MapCenter.y + math.sin(angle) * distance,
+                0f
+            );
+
+            ecb.SetComponent(zombie, LocalTransform.FromPosition(position));
+
+            // Zombies start dormant - no target
+            ecb.SetComponent(zombie, new TargetPosition
+            {
+                Value = float2.zero,
+                HasTarget = false
+            });
+        }
+
+        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.InitialZombieCount} zombies (min dist {config.ZombieMinDistance}, max {config.MapRadius})");
+    }
+}

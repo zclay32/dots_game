@@ -11,7 +11,7 @@ using Unity.Transforms;
 /// Runs continuously to handle wave-spawned zombies.
 /// Only fixes zombies whose SpawnPosition is at origin (0,0) - indicating they haven't been fixed yet.
 /// </summary>
-[UpdateAfter(typeof(CombatSpawnerSystem))]
+[UpdateAfter(typeof(GameSpawnerSystem))]
 [UpdateAfter(typeof(UnitSpawnerSystem))]
 [UpdateAfter(typeof(WaveSpawnerSystem))]
 public partial struct ZombieSpawnPositionFixupSystem : ISystem
