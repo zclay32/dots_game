@@ -18,6 +18,10 @@ public class FogOfWarManager : MonoBehaviour
     [Tooltip("Semi-transparent tile for explored (previously seen) areas")]
     public TileBase exploredTile;
 
+    [Header("Rendering")]
+    [Tooltip("Optional material for fog tilemap (use stencil shader to prevent alpha stacking)")]
+    public Material fogMaterial;
+
     [Header("Runtime References")]
     public Tilemap FogTilemap { get; private set; }
 
@@ -107,6 +111,13 @@ public class FogOfWarManager : MonoBehaviour
 
         // Render above ground (-100) but below units (default 0)
         fogRenderer.sortingOrder = -50;
+
+        // Apply custom material if assigned (stencil shader prevents alpha stacking)
+        if (fogMaterial != null)
+        {
+            fogRenderer.material = fogMaterial;
+            Debug.Log("[FogOfWarManager] Fog tilemap using custom material");
+        }
 
         Debug.Log("[FogOfWarManager] Fog tilemap created with sorting order -50");
     }
