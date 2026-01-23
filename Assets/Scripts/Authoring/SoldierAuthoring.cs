@@ -22,6 +22,9 @@ public class SoldierAuthoring : MonoBehaviour
     public float noiseRangeMultiplier = 15f;  // Multiplier on attack range (15x = 75 units if attackRange is 5)
     public float noiseIntensity = 2.0f;       // How loud (1.0 = normal, 2.0 = very loud)
     public float noiseFalloffExponent = 1.2f; // How fast sound fades (1.0 = linear, 2.0 = quadratic)
+
+    [Header("Vision")]
+    public float visionRadius = 10f;  // Vision range in world units
     
     class Baker : Baker<SoldierAuthoring>
     {
@@ -118,6 +121,9 @@ public class SoldierAuthoring : MonoBehaviour
 
             // Separation force (used by two-pass separation system)
             AddComponent(entity, new SeparationForce { Force = float2.zero });
+
+            // Vision for fog of war
+            AddComponent(entity, new VisionSource { VisionRadius = authoring.visionRadius });
         }
     }
 }
