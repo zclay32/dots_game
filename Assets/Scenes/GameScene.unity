@@ -195,8 +195,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e82731291289778438a6d6b9c1e1e1f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hiddenTile: {fileID: 0}
-  exploredTile: {fileID: 0}
+  hiddenTile: {fileID: 11400000, guid: 0e50ef88f7af09943ac25b57168d39ad, type: 2}
+  exploredTile: {fileID: 11400000, guid: 6cd2f65a5e92cf14bb3daaa136a8b2da, type: 2}
+  fogMaterial: {fileID: 2100000, guid: 7924a146a38d40e4683c75a89143e598, type: 2}
 --- !u!4 &323620774
 Transform:
   m_ObjectHideFlags: 0
