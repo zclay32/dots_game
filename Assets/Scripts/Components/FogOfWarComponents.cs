@@ -19,3 +19,18 @@ public struct VisionSource : IComponentData
 {
     public float VisionRadius;  // Vision range in world units
 }
+
+/// <summary>
+/// Tag component added to entities that should be hidden by fog of war.
+/// Rendering systems should skip entities with this component.
+/// </summary>
+public struct FogHidden : IComponentData { }
+
+/// <summary>
+/// Stores the original scale of an entity before it was hidden by fog of war.
+/// Used to restore scale when the entity becomes visible again.
+/// </summary>
+public struct FogHiddenScale : IComponentData
+{
+    public float Value;
+}

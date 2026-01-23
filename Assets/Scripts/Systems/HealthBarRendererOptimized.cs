@@ -144,6 +144,10 @@ public class HealthBarRendererOptimized : MonoBehaviour
 
             for (int i = 0; i < healthCurrents.Length; i++)
             {
+                // Skip entities hidden by fog of war (scale set to 0)
+                if (transforms[i].Scale < 0.01f)
+                    continue;
+
                 ProcessHealthBar(
                     healthCurrents[i].Value,
                     healthMaxs[i].Value,
@@ -169,6 +173,10 @@ public class HealthBarRendererOptimized : MonoBehaviour
 
             for (int i = 0; i < healths.Length; i++)
             {
+                // Skip entities hidden by fog of war (scale set to 0)
+                if (transforms[i].Scale < 0.01f)
+                    continue;
+
                 ProcessHealthBar(
                     healths[i].Current,
                     healths[i].Max,

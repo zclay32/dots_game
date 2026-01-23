@@ -141,17 +141,20 @@ public class HealthBarRenderer : MonoBehaviour
         for (int i = 0; i < healths.Length; i++)
         {
             Health health = healths[i];
-            
+
             // Skip dead units
             if (health.IsDead) continue;
-            
+
+            // Skip entities hidden by fog of war (scale set to 0)
+            if (transforms[i].Scale < 0.01f) continue;
+
             // Skip full health unless enabled
             float healthPercent = health.Current / health.Max;
             if (!showFullHealthBars && healthPercent >= 1f) continue;
-            
+
             // Camera frustum culling
             float3 worldPos = transforms[i].Position;
-            if (worldPos.x < minX || worldPos.x > maxX || 
+            if (worldPos.x < minX || worldPos.x > maxX ||
                 worldPos.y < minY || worldPos.y > maxY) continue;
             
             // Cache this health bar data
