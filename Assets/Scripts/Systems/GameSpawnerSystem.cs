@@ -35,7 +35,10 @@ public partial struct GameSpawnerSystem : ISystem
         var ecb = new EntityCommandBuffer(Allocator.Temp);
         var random = new Random((uint)System.DateTime.Now.Ticks);
 
-        // Spawn soldiers clustered in center
+        // Spawn crystal at map center first
+        SpawnCrystal(ref ecb, config, prefabs);
+
+        // Spawn soldiers clustered around crystal (not on top of it)
         SpawnSoldiers(ref ecb, ref random, config, prefabs);
 
         // Spawn zombies biased toward edges
@@ -48,21 +51,34 @@ public partial struct GameSpawnerSystem : ISystem
         var spawnEntity = SystemAPI.GetSingletonEntity<SpawnRequest>();
         state.EntityManager.SetComponentData(spawnEntity, new SpawnRequest { ShouldSpawn = false });
 
-        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.SoldierCount} soldiers and {config.InitialZombieCount} zombies");
+        UnityEngine.Debug.Log($"[GameSpawner] Spawned crystal, {config.SoldierCount} soldiers, and {config.InitialZombieCount} zombies");
+    }
+
+    private void SpawnCrystal(ref EntityCommandBuffer ecb, GameConfig config, PrefabLibrary prefabs)
+    {
+        var crystal = ecb.Instantiate(prefabs.CrystalPrefab);
+
+        // Spawn at map center
+        float3 position = new float3(config.MapCenter.x, config.MapCenter.y, 0f);
+        ecb.SetComponent(crystal, LocalTransform.FromPosition(position));
+
+        UnityEngine.Debug.Log($"[GameSpawner] Spawned crystal at center ({config.MapCenter.x}, {config.MapCenter.y})");
     }
 
     private void SpawnSoldiers(ref EntityCommandBuffer ecb, ref Random random, GameConfig config, PrefabLibrary prefabs)
     {
-        // Spawn soldiers in a tight cluster around center
-        const float soldierSpawnRadius = 5f;
+        // Spawn soldiers in a ring around the crystal (not on top of it)
+        // Crystal is 4x4 tiles, so min radius of 6 keeps soldiers clear
+        const float soldierMinRadius = 6f;
+        const float soldierMaxRadius = 12f;
 
         for (int i = 0; i < config.SoldierCount; i++)
         {
             var soldier = ecb.Instantiate(prefabs.SoldierPrefab);
 
-            // Random position in circle around center
+            // Random position in ring around center
             float angle = random.NextFloat(0f, math.PI * 2f);
-            float distance = random.NextFloat(0f, soldierSpawnRadius);
+            float distance = random.NextFloat(soldierMinRadius, soldierMaxRadius);
 
             float3 position = new float3(
                 config.MapCenter.x + math.cos(angle) * distance,
@@ -76,7 +92,7 @@ public partial struct GameSpawnerSystem : ISystem
             ecb.SetComponent(soldier, new TargetPosition { HasTarget = false });
         }
 
-        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.SoldierCount} soldiers in center (radius {soldierSpawnRadius})");
+        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.SoldierCount} soldiers in ring (radius {soldierMinRadius}-{soldierMaxRadius})");
     }
 
     private void SpawnZombies(ref EntityCommandBuffer ecb, ref Random random, GameConfig config, PrefabLibrary prefabs)

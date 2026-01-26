@@ -23,6 +23,7 @@ public struct PrefabLibrary : IComponentData
 {
     public Entity SoldierPrefab;
     public Entity ZombiePrefab;
+    public Entity CrystalPrefab;
 }
 
 /// <summary>
