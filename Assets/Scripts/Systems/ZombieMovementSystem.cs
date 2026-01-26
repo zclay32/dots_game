@@ -96,16 +96,18 @@ public partial struct MoveZombiesByStateJob : IJobEntity
 
                     float distance = math.distance(currentPos, targetPos);
 
-                    // For small targets (soldiers): stop when within attack range
-                    // For large targets (crystal with targetRadius): keep moving until blocked
-                    if (targetRadius < 0.5f && distance <= combatConfig.AttackRange)
+                    // Calculate effective attack range (accounting for target size)
+                    float effectiveAttackRange = combatConfig.AttackRange + targetRadius;
+
+                    // Stop when within attack range (for both small and large targets)
+                    if (distance <= effectiveAttackRange)
                     {
-                        // In range of point target (soldiers) - stop moving
+                        // In attack range - stop moving so state machine can transition to attack
                         velocity.Value = float2.zero;
                     }
                     else
                     {
-                        // Use flow field only for distant targets (soldiers moving around)
+                        // Use flow field only for distant small targets (soldiers moving around)
                         // For close/stationary targets (like crystal), use direct movement
                         // Flow field points toward soldiers, so it would misdirect zombies targeting crystal
                         bool useFlowField = targetRadius < 0.5f && distance > 10f;
