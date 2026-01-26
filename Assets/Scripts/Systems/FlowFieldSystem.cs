@@ -46,9 +46,17 @@ public partial struct FlowFieldSystem : ISystem
         }
         
         // Only update flow field every N frames (with offset for staggering)
+        // Exception: regenerate immediately if obstacles changed
         _frameCount++;
-        if ((_frameCount + FRAME_OFFSET) % UPDATE_INTERVAL != 0)
+        bool forceRegenerate = FlowFieldData.NeedsRegeneration;
+        if (!forceRegenerate && (_frameCount + FRAME_OFFSET) % UPDATE_INTERVAL != 0)
             return;
+
+        if (forceRegenerate)
+        {
+            FlowFieldData.NeedsRegeneration = false;
+            UnityEngine.Debug.Log("[FlowField] Regenerating due to obstacle changes");
+        }
         
         // Collect all player unit positions as targets
         var targetPositions = new NativeList<float2>(Allocator.Temp);

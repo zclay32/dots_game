@@ -34,7 +34,10 @@ public static class FlowFieldData
     public static NativeArray<bool> Walkable;
     
     public static bool IsCreated => FlowDirections.IsCreated;
-    
+
+    // Flag to force regeneration (set by ObstacleRegistrationSystem)
+    public static bool NeedsRegeneration;
+
     public static int GridWidth;
     public static int GridHeight;
     public static float CellSize;

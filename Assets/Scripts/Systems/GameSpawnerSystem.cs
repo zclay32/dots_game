@@ -56,6 +56,12 @@ public partial struct GameSpawnerSystem : ISystem
 
     private void SpawnCrystal(ref EntityCommandBuffer ecb, GameConfig config, PrefabLibrary prefabs)
     {
+        if (prefabs.CrystalPrefab == Entity.Null)
+        {
+            UnityEngine.Debug.LogError("[GameSpawner] CrystalPrefab is not assigned in PrefabLibraryAuthoring!");
+            return;
+        }
+
         var crystal = ecb.Instantiate(prefabs.CrystalPrefab);
 
         // Spawn at map center
