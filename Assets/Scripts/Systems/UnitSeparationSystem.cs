@@ -64,7 +64,17 @@ public partial struct UnitSeparationSystem : ISystem
         }.ScheduleParallel(state.Dependency);
 
         // PASS 2: Apply separation forces to all units (parallel)
-        state.Dependency = new ApplySeparationJob().ScheduleParallel(state.Dependency);
+        // Pass walkable grid to prevent pushing units into obstacles
+        bool flowFieldReady = FlowFieldData.IsCreated;
+        state.Dependency = new ApplySeparationJob
+        {
+            FlowFieldReady = flowFieldReady,
+            GridWidth = flowFieldReady ? FlowFieldData.GridWidth : 0,
+            GridHeight = flowFieldReady ? FlowFieldData.GridHeight : 0,
+            CellSize = flowFieldReady ? FlowFieldData.CellSize : 1f,
+            WorldOffset = flowFieldReady ? FlowFieldData.WorldOffset : float2.zero,
+            Walkable = flowFieldReady ? FlowFieldData.Walkable : default
+        }.ScheduleParallel(state.Dependency);
     }
 }
 
@@ -225,16 +235,66 @@ public partial struct ComputeSeparationJob : IJobEntity
 /// <summary>
 /// Pass 2: Apply separation forces to transforms.
 /// Only reads SeparationForce, only writes to LocalTransform - no aliasing.
+/// Checks walkability to avoid pushing units into obstacles.
 /// </summary>
 [BurstCompile]
 public partial struct ApplySeparationJob : IJobEntity
 {
+    public bool FlowFieldReady;
+    public int GridWidth;
+    public int GridHeight;
+    public float CellSize;
+    public float2 WorldOffset;
+    [ReadOnly] public NativeArray<bool> Walkable;
+
     void Execute(ref LocalTransform transform, in SeparationForce separationForce)
     {
-        if (math.lengthsq(separationForce.Force) > 0.0001f)
+        if (math.lengthsq(separationForce.Force) < 0.0001f)
+            return;
+
+        float2 currentPos = new float2(transform.Position.x, transform.Position.y);
+        float2 newPos = currentPos + separationForce.Force;
+
+        // Check if new position is walkable before applying
+        if (!FlowFieldReady || !Walkable.IsCreated || IsWalkable(newPos))
         {
-            transform.Position.x += separationForce.Force.x;
-            transform.Position.y += separationForce.Force.y;
+            transform.Position.x = newPos.x;
+            transform.Position.y = newPos.y;
         }
+        else
+        {
+            // Try sliding along X only
+            float2 slideX = new float2(currentPos.x + separationForce.Force.x, currentPos.y);
+            if (IsWalkable(slideX))
+            {
+                transform.Position.x = slideX.x;
+            }
+            else
+            {
+                // Try sliding along Y only
+                float2 slideY = new float2(currentPos.x, currentPos.y + separationForce.Force.y);
+                if (IsWalkable(slideY))
+                {
+                    transform.Position.y = slideY.y;
+                }
+                // If neither works, don't apply separation (stay in place)
+            }
+        }
+    }
+
+    bool IsWalkable(float2 worldPos)
+    {
+        float2 localPos = worldPos + WorldOffset;
+        int x = (int)math.floor(localPos.x / CellSize);
+        int y = (int)math.floor(localPos.y / CellSize);
+
+        if (x < 0 || x >= GridWidth || y < 0 || y >= GridHeight)
+            return false;
+
+        int index = y * GridWidth + x;
+        if (index < 0 || index >= Walkable.Length)
+            return false;
+
+        return Walkable[index];
     }
 }
