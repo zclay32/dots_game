@@ -67,16 +67,17 @@ public partial struct MoveZombiesByStateJob : IJobEntity
                 break;
 
             case ZombieCombatAIState.Wandering:
-                // Slow movement toward wander target
+                // Slow movement toward wander target (no flow field - direct movement)
                 MoveToward(ref transform, ref velocity, ref targetPosition, currentPos,
-                    combatState.WanderTarget, speed.Value * combatConfig.WanderSpeedMultiplier, DeltaTime);
+                    combatState.WanderTarget, speed.Value * combatConfig.WanderSpeedMultiplier, DeltaTime,
+                    useFlowField: false);
                 break;
 
             case ZombieCombatAIState.Chasing:
                 // Full speed toward target
                 if (combatState.HasTarget)
                 {
-                    // Chasing a specific entity - use cached target position
+                    // Chasing a specific entity - use cached target position with flow field
                     float2 targetPos = combatState.CachedTargetPos;
 
                     // Set target position for other systems (facing, etc.)
@@ -92,22 +93,23 @@ public partial struct MoveZombiesByStateJob : IJobEntity
                     }
                     else
                     {
-                        // Move toward target
+                        // Move toward target using flow field for pathfinding
                         MoveToward(ref transform, ref velocity, ref targetPosition, currentPos,
-                            targetPos, speed.Value, DeltaTime);
+                            targetPos, speed.Value, DeltaTime, useFlowField: true);
                     }
                 }
                 else
                 {
                     // No entity target - chase toward WanderTarget (noise position) at full speed
+                    // Use DIRECT movement, not flow field, so zombie investigates the actual noise source
                     float2 chasePos = combatState.WanderTarget;
                     float distanceToNoise = math.distance(currentPos, chasePos);
 
                     if (distanceToNoise > 0.5f)
                     {
-                        // Still moving toward noise location
+                        // Still moving toward noise location (direct path, not flow field)
                         MoveToward(ref transform, ref velocity, ref targetPosition, currentPos,
-                            chasePos, speed.Value, DeltaTime);
+                            chasePos, speed.Value, DeltaTime, useFlowField: false);
                     }
                     else
                     {
@@ -134,7 +136,7 @@ public partial struct MoveZombiesByStateJob : IJobEntity
     }
 
     private void MoveToward(ref LocalTransform transform, ref Velocity velocity, ref TargetPosition targetPosition,
-        float2 currentPos, float2 targetPos, float moveSpeed, float deltaTime)
+        float2 currentPos, float2 targetPos, float moveSpeed, float deltaTime, bool useFlowField)
     {
         targetPosition.Value = targetPos;
         targetPosition.HasTarget = true;
@@ -146,8 +148,8 @@ public partial struct MoveZombiesByStateJob : IJobEntity
         {
             float2 moveDir;
 
-            // Use flow field for pathfinding around obstacles
-            if (FlowFieldReady && FlowDirections.IsCreated)
+            // Use flow field for pathfinding around obstacles (only when chasing entity targets)
+            if (useFlowField && FlowFieldReady && FlowDirections.IsCreated)
             {
                 float2 flowDir = GetFlowDirection(currentPos);
                 if (math.lengthsq(flowDir) > 0.01f)
@@ -161,6 +163,7 @@ public partial struct MoveZombiesByStateJob : IJobEntity
             }
             else
             {
+                // Direct movement toward target (for noise investigation, wandering)
                 moveDir = direction / distance;
             }
 
