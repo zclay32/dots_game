@@ -73,24 +73,23 @@ public partial struct GameSpawnerSystem : ISystem
 
     private void SpawnSoldiers(ref EntityCommandBuffer ecb, ref Random random, GameConfig config, PrefabLibrary prefabs)
     {
-        // Spawn soldiers in a tight cluster just below the crystal
+        // Spawn soldiers in a horizontal line below the crystal
         // Crystal is 4x4 tiles (~4 units), so offset by 5 units below center
         const float spawnOffsetY = -5f;
-        const float clusterRadius = 2f;
+        const float spacing = 1.5f;
 
-        float2 spawnCenter = new float2(config.MapCenter.x, config.MapCenter.y + spawnOffsetY);
+        // Center the line horizontally
+        float totalWidth = (config.SoldierCount - 1) * spacing;
+        float startX = config.MapCenter.x - totalWidth * 0.5f;
+        float spawnY = config.MapCenter.y + spawnOffsetY;
 
         for (int i = 0; i < config.SoldierCount; i++)
         {
             var soldier = ecb.Instantiate(prefabs.SoldierPrefab);
 
-            // Random position in small cluster below crystal
-            float angle = random.NextFloat(0f, math.PI * 2f);
-            float distance = random.NextFloat(0f, clusterRadius);
-
             float3 position = new float3(
-                spawnCenter.x + math.cos(angle) * distance,
-                spawnCenter.y + math.sin(angle) * distance,
+                startX + i * spacing,
+                spawnY,
                 0f
             );
 
@@ -100,7 +99,7 @@ public partial struct GameSpawnerSystem : ISystem
             ecb.SetComponent(soldier, new TargetPosition { HasTarget = false });
         }
 
-        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.SoldierCount} soldiers below crystal");
+        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.SoldierCount} soldiers in line below crystal");
     }
 
     private void SpawnZombies(ref EntityCommandBuffer ecb, ref Random random, GameConfig config, PrefabLibrary prefabs)
