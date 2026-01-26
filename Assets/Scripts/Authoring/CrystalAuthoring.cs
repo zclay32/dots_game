@@ -60,6 +60,13 @@ public class CrystalAuthoring : MonoBehaviour
                 TileHeight = authoring.tileFootprint
             });
 
+            // Target radius - allows melee attackers to hit from the edge of the crystal
+            // Half the footprint + some margin so zombies can attack from the obstacle edge
+            AddComponent(entity, new TargetRadius
+            {
+                Value = authoring.tileFootprint * 0.5f + 0.5f
+            });
+
             // Vision for fog of war (crystal has larger vision than soldiers)
             AddComponent(entity, new VisionSource { VisionRadius = authoring.visionRadius });
         }

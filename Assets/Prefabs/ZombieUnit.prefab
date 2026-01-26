@@ -107,10 +107,10 @@ MonoBehaviour:
   attackCooldown: 1
   attackWindup: 0.8
   attackConeAngle: 45
-  alertRadius: 3
-  aggroRadius: 15
+  aggroRadius: 4
   wanderRadius: 2
   wanderSpeedMultiplier: 0.25
   noiseSensitivityMultiplier: 2
   minActivationProbability: 0
   maxActivationProbability: 1
+  aggroProbability: 0.1

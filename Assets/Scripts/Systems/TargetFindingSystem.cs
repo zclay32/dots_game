@@ -96,8 +96,8 @@ public partial struct FindZombieTargetsJob : IJobEntity
                  in LocalTransform transform, in Faction faction)
     {
         // Determine search radius based on state
-        float searchRadius = zombieState.State == ZombieAIState.Dormant 
-            ? zombieState.AlertRadius 
+        float searchRadius = zombieState.State == ZombieAIState.Dormant
+            ? zombieState.AggroRadius
             : zombieState.ChaseRadius;
         
         float2 myPos = new float2(transform.Position.x, transform.Position.y);

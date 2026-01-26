@@ -25,6 +25,7 @@ public partial struct ZombieMovementSystem : ISystem
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
         bool flowFieldReady = FlowFieldData.IsCreated;
+        var targetRadiusLookup = SystemAPI.GetComponentLookup<TargetRadius>(true);
 
         new MoveZombiesByStateJob
         {
@@ -35,7 +36,8 @@ public partial struct ZombieMovementSystem : ISystem
             CellSize = flowFieldReady ? FlowFieldData.CellSize : 1f,
             WorldOffset = flowFieldReady ? FlowFieldData.WorldOffset : float2.zero,
             Walkable = flowFieldReady ? FlowFieldData.Walkable : default,
-            FlowDirections = flowFieldReady ? FlowFieldData.FlowDirections : default
+            FlowDirections = flowFieldReady ? FlowFieldData.FlowDirections : default,
+            TargetRadiusLookup = targetRadiusLookup
         }.ScheduleParallel();
     }
 }
@@ -51,12 +53,20 @@ public partial struct MoveZombiesByStateJob : IJobEntity
     public float2 WorldOffset;
     [ReadOnly] public NativeArray<bool> Walkable;
     [ReadOnly] public NativeArray<float2> FlowDirections;
+    [ReadOnly] public ComponentLookup<TargetRadius> TargetRadiusLookup;
 
     void Execute(ref LocalTransform transform, ref Velocity velocity, ref TargetPosition targetPosition,
                  in MoveSpeed speed, in ZombieCombatState combatState, in ZombieCombatConfig combatConfig,
                  in EnemyUnit enemyTag)
     {
         float2 currentPos = new float2(transform.Position.x, transform.Position.y);
+
+        // Get target radius if targeting a large entity (like crystal)
+        float targetRadius = 0f;
+        if (combatState.HasTarget && TargetRadiusLookup.HasComponent(combatState.CurrentTarget))
+        {
+            targetRadius = TargetRadiusLookup[combatState.CurrentTarget].Value;
+        }
 
         switch (combatState.State)
         {
@@ -77,25 +87,30 @@ public partial struct MoveZombiesByStateJob : IJobEntity
                 // Full speed toward target
                 if (combatState.HasTarget)
                 {
-                    // Chasing a specific entity - use cached target position with flow field
+                    // Chasing a specific entity - use cached target position
                     float2 targetPos = combatState.CachedTargetPos;
 
                     // Set target position for other systems (facing, etc.)
                     targetPosition.Value = targetPos;
                     targetPosition.HasTarget = true;
 
-                    // Check if close enough to stop
                     float distance = math.distance(currentPos, targetPos);
-                    if (distance <= combatConfig.AttackRange)
+
+                    // For small targets (soldiers): stop when within attack range
+                    // For large targets (crystal with targetRadius): keep moving until blocked
+                    if (targetRadius < 0.5f && distance <= combatConfig.AttackRange)
                     {
-                        // In range - stop moving
+                        // In range of point target (soldiers) - stop moving
                         velocity.Value = float2.zero;
                     }
                     else
                     {
-                        // Move toward target using flow field for pathfinding
+                        // Use flow field only for distant targets (soldiers moving around)
+                        // For close/stationary targets (like crystal), use direct movement
+                        // Flow field points toward soldiers, so it would misdirect zombies targeting crystal
+                        bool useFlowField = targetRadius < 0.5f && distance > 10f;
                         MoveToward(ref transform, ref velocity, ref targetPosition, currentPos,
-                            targetPos, speed.Value, DeltaTime, useFlowField: true);
+                            targetPos, speed.Value, DeltaTime, useFlowField);
                     }
                 }
                 else
@@ -167,16 +182,19 @@ public partial struct MoveZombiesByStateJob : IJobEntity
                 moveDir = direction / distance;
             }
 
-            velocity.Value = moveDir * moveSpeed;
-
-            float2 movement = velocity.Value * deltaTime;
+            float2 intendedVelocity = moveDir * moveSpeed;
+            float2 movement = intendedVelocity * deltaTime;
             float2 newPos = currentPos + movement;
 
             // Check walkability and slide along obstacles if needed
+            // Track actual movement for velocity calculation
+            float2 actualMovement = float2.zero;
+
             if (!FlowFieldReady || !Walkable.IsCreated || IsWalkable(newPos))
             {
                 transform.Position.x = newPos.x;
                 transform.Position.y = newPos.y;
+                actualMovement = movement;
             }
             else
             {
@@ -185,6 +203,7 @@ public partial struct MoveZombiesByStateJob : IJobEntity
                 if (IsWalkable(slideX))
                 {
                     transform.Position.x = slideX.x;
+                    actualMovement.x = movement.x;
                 }
                 else
                 {
@@ -193,9 +212,21 @@ public partial struct MoveZombiesByStateJob : IJobEntity
                     if (IsWalkable(slideY))
                     {
                         transform.Position.y = slideY.y;
+                        actualMovement.y = movement.y;
                     }
-                    // If neither works, don't move (stay in place)
+                    // If neither works, actualMovement stays zero
                 }
+            }
+
+            // Set velocity to reflect actual movement (for state machine stopped detection)
+            if (math.lengthsq(actualMovement) > 0.0001f)
+            {
+                velocity.Value = actualMovement / deltaTime;
+            }
+            else
+            {
+                // Completely blocked - can't move in any direction
+                velocity.Value = float2.zero;
             }
         }
         else
