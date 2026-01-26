@@ -38,7 +38,8 @@ public partial struct FacingRotationSystem : ISystem
         // Pass 1: Calculate target angles for zombies
         state.Dependency = new CalculateZombieTargetAnglesJob
         {
-            TransformLookup = transformLookup
+            TransformLookup = transformLookup,
+            ZombieCombatStateLookup = SystemAPI.GetComponentLookup<ZombieCombatState>(true)
         }.ScheduleParallel(state.Dependency);
 
         // Pass 2: Apply rotation to zombies
@@ -149,34 +150,52 @@ public partial struct UpdateMovementFacingJob : IJobEntity
 
 /// <summary>
 /// Pass 1: Calculate target angles for zombies (parallel with read-only lookups)
+/// Supports both legacy CombatTarget and new ZombieCombatState target systems
 /// </summary>
 [BurstCompile]
 public partial struct CalculateZombieTargetAnglesJob : IJobEntity
 {
     [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
+    [ReadOnly] public ComponentLookup<ZombieCombatState> ZombieCombatStateLookup;
 
-    void Execute(ref ZombieTargetAngle targetAngle, ref CombatTarget target, in LocalTransform transform,
+    void Execute(Entity entity, ref ZombieTargetAngle targetAngle, ref CombatTarget target, in LocalTransform transform,
                  in Velocity velocity, in ZombieState zombieState)
     {
-        // Only calculate angle when standing still and have a target
+        // Only calculate angle when standing still
         if (math.lengthsq(velocity.Value) > 0.01f)
         {
             targetAngle.HasValidAngle = false;
             return;
         }
 
-        if (target.Target == Entity.Null)
+        // Check new state machine target first, then legacy CombatTarget
+        Entity targetEntity = Entity.Null;
+
+        if (ZombieCombatStateLookup.HasComponent(entity))
+        {
+            var combatState = ZombieCombatStateLookup[entity];
+            if (combatState.HasTarget)
+            {
+                targetEntity = combatState.CurrentTarget;
+            }
+        }
+
+        // Fallback to legacy CombatTarget
+        if (targetEntity == Entity.Null && target.Target != Entity.Null)
+        {
+            targetEntity = target.Target;
+        }
+
+        if (targetEntity == Entity.Null)
         {
             targetAngle.HasValidAngle = false;
             return;
         }
 
         // Get target position (read-only lookup - safe in parallel)
-        // Also clear target if it no longer exists
-        if (!TransformLookup.TryGetComponent(target.Target, out var targetTransform))
+        if (!TransformLookup.TryGetComponent(targetEntity, out var targetTransform))
         {
             targetAngle.HasValidAngle = false;
-            target.Target = Entity.Null;
             return;
         }
 

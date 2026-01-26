@@ -81,8 +81,8 @@ public struct EnemyUnit : IComponentData { }
 public struct ZombieState : IComponentData
 {
     public ZombieAIState State;
-    public float AlertRadius;      // Small radius when dormant
-    public float ChaseRadius;      // Large radius when alert/chasing
+    public float AggroRadius;      // Detection radius
+    public float ChaseRadius;      // Max chase distance
     public float AlertTimer;       // How long to stay alert after losing target
 }
 
@@ -91,4 +91,15 @@ public enum ZombieAIState : byte
     Dormant = 0,   // Standing still, tiny detection radius
     Alert = 1,     // Heard something, larger detection radius
     Chasing = 2    // Actively pursuing a target
+}
+
+/// <summary>
+/// Radius of the entity for targeting purposes.
+/// Added to attack range checks so attackers can hit large entities from their edge.
+/// For example, a 4x4 crystal at (0,0) has edges at ~2 units from center,
+/// so TargetRadius=2.5 allows melee attackers to hit from the edge.
+/// </summary>
+public struct TargetRadius : IComponentData
+{
+    public float Value;
 }

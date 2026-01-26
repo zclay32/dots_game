@@ -56,6 +56,7 @@ public partial struct UnitSeparationSystem : ISystem
             PlayerUnitLookup = SystemAPI.GetComponentLookup<PlayerUnit>(true),
             EnemyUnitLookup = SystemAPI.GetComponentLookup<EnemyUnit>(true),
             CombatTargetLookup = SystemAPI.GetComponentLookup<CombatTarget>(true),
+            ZombieCombatStateLookup = SystemAPI.GetComponentLookup<ZombieCombatState>(true),
             VelocityLookup = SystemAPI.GetComponentLookup<Velocity>(true),
             CellSize = config.CellSize,
             WorldOffset = config.WorldOffset,
@@ -90,6 +91,7 @@ public partial struct ComputeSeparationJob : IJobEntity
     [ReadOnly] public ComponentLookup<PlayerUnit> PlayerUnitLookup;
     [ReadOnly] public ComponentLookup<EnemyUnit> EnemyUnitLookup;
     [ReadOnly] public ComponentLookup<CombatTarget> CombatTargetLookup;
+    [ReadOnly] public ComponentLookup<ZombieCombatState> ZombieCombatStateLookup;
     [ReadOnly] public ComponentLookup<Velocity> VelocityLookup;
     public float CellSize;
     public float2 WorldOffset;
@@ -102,9 +104,9 @@ public partial struct ComputeSeparationJob : IJobEntity
     private const float SoldierRandomOffset = 0.05f;
 
     // Zombie settings
-    private const float ZombieSeparationRadius = 0.5f;
-    private const float ZombieSeparationStrength = 2f;
-    private const float ZombieStoppedStrengthMultiplier = 0.3f;
+    private const float ZombieSeparationRadius = 0.6f;  // Slightly larger radius to spread around crystal
+    private const float ZombieSeparationStrength = 2.5f;
+    private const float ZombieStoppedStrengthMultiplier = 0.5f;  // Keep separation while attacking
     private const float ZombieRandomOffset = 0.1f;
 
     void Execute(
@@ -132,13 +134,27 @@ public partial struct ComputeSeparationJob : IJobEntity
         else if (isZombie)
         {
             // Zombies only separate when in combat
-            if (!CombatTargetLookup.HasComponent(entity))
+            // Check new state machine first (ZombieCombatState), then legacy (CombatTarget)
+            bool inCombat = false;
+
+            if (ZombieCombatStateLookup.HasComponent(entity))
             {
-                separationForce.Force = float2.zero;
-                return;
+                var zombieCombatState = ZombieCombatStateLookup[entity];
+                // Consider "in combat" if has target or in any combat-related state
+                inCombat = zombieCombatState.HasTarget ||
+                           zombieCombatState.State == ZombieCombatAIState.Chasing ||
+                           zombieCombatState.State == ZombieCombatAIState.WindingUp ||
+                           zombieCombatState.State == ZombieCombatAIState.Attacking ||
+                           zombieCombatState.State == ZombieCombatAIState.Cooldown;
             }
-            var combatTarget = CombatTargetLookup[entity];
-            if (combatTarget.Target == Entity.Null)
+            else if (CombatTargetLookup.HasComponent(entity))
+            {
+                // Legacy fallback
+                var combatTarget = CombatTargetLookup[entity];
+                inCombat = combatTarget.Target != Entity.Null;
+            }
+
+            if (!inCombat)
             {
                 separationForce.Force = float2.zero;
                 return;

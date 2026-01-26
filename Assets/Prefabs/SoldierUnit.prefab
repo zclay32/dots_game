@@ -102,9 +102,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 4
   maxHealth: 100
-  attackDamage: 25
+  attackDamage: 10
   attackRange: 5
   attackCooldown: 0.5
   noiseRangeMultiplier: 2
   noiseIntensity: 3
   noiseFalloffExponent: 1.75
+  visionRadius: 10

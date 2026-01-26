@@ -28,6 +28,7 @@ public struct ZombieCombatState : IComponentData
     public float2 WanderTarget;        // Current wander destination
     public bool HasEngagedTarget;      // True after first attack on current target (skips windup)
     public float2 CachedTargetPos;     // Cached position of CurrentTarget (updated by state machine)
+    public bool NeedsTargetSearch;     // Set when zombie loses target - triggers immediate search
 }
 
 /// <summary>
@@ -41,8 +42,8 @@ public struct ZombieCombatConfig : IComponentData
     public float AttackCooldown;
     public float AttackWindup;
     public float AttackConeAngle;      // Degrees - width of damage cone
-    public float AggroRadius;          // Detection range when alert/chasing
-    public float AlertRadius;          // Detection range when idle
+    public float AggroRadius;          // Detection radius - how close to notice a target
+    public float ChaseRadius;          // Max chase distance - how far to chase before giving up
     public float WanderRadius;         // Max distance from spawn when wandering
     public float WanderSpeedMultiplier; // Fraction of max speed when wandering
     public float2 SpawnPosition;       // Original spawn position for wander range
