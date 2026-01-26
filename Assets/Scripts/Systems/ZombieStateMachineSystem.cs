@@ -57,6 +57,8 @@ public partial struct ZombieStateMachineSystem : ISystem
             {
                 var config = SystemAPI.GetSingleton<SpatialHashConfig>();
                 var factionLookup = SystemAPI.GetComponentLookup<Faction>(true);
+                var playerUnitLookup = SystemAPI.GetComponentLookup<PlayerUnit>(true);
+                var crystalLookup = SystemAPI.GetComponentLookup<Crystal>(true);
 
                 // Schedule parallel target search job - NO Complete() needed!
                 state.Dependency = new ZombieTargetSearchJob
@@ -65,6 +67,8 @@ public partial struct ZombieStateMachineSystem : ISystem
                     TransformLookup = transformLookup,
                     HealthLookup = healthLookup,
                     FactionLookup = factionLookup,
+                    PlayerUnitLookup = playerUnitLookup,
+                    CrystalLookup = crystalLookup,
                     CellSize = config.CellSize,
                     WorldOffset = config.WorldOffset
                 }.ScheduleParallel(state.Dependency);
@@ -76,6 +80,7 @@ public partial struct ZombieStateMachineSystem : ISystem
 /// <summary>
 /// Parallel job for zombie target searching.
 /// Uses spatial hash to find nearest player target for idle/wandering zombies.
+/// Implements priority targeting: soldiers (PlayerUnit) are preferred over the crystal.
 /// </summary>
 [BurstCompile]
 public partial struct ZombieTargetSearchJob : IJobEntity
@@ -84,6 +89,8 @@ public partial struct ZombieTargetSearchJob : IJobEntity
     [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
     [ReadOnly] public ComponentLookup<Health> HealthLookup;
     [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+    [ReadOnly] public ComponentLookup<PlayerUnit> PlayerUnitLookup;
+    [ReadOnly] public ComponentLookup<Crystal> CrystalLookup;
     public float CellSize;
     public float2 WorldOffset;
 
@@ -131,8 +138,12 @@ public partial struct ZombieTargetSearchJob : IJobEntity
         int2 myCell = SpatialHashHelper.WorldToCell(myPos, CellSize, WorldOffset);
         int cellRadius = (int)math.ceil(searchRadius / CellSize);
 
-        Entity bestTarget = Entity.Null;
-        float bestDistanceSq = searchRadius * searchRadius;
+        // Track best unit (soldier) and best crystal separately for priority targeting
+        Entity bestUnitTarget = Entity.Null;
+        float bestUnitDistanceSq = searchRadius * searchRadius;
+
+        Entity bestCrystalTarget = Entity.Null;
+        float bestCrystalDistanceSq = searchRadius * searchRadius;
 
         for (int x = -cellRadius; x <= cellRadius; x++)
         {
@@ -146,7 +157,7 @@ public partial struct ZombieTargetSearchJob : IJobEntity
 
                 do
                 {
-                    // Skip non-player units
+                    // Skip non-player faction
                     if (!FactionLookup.HasComponent(other)) continue;
                     var faction = FactionLookup[other];
                     if (faction.Value != FactionType.Player) continue;
@@ -162,17 +173,32 @@ public partial struct ZombieTargetSearchJob : IJobEntity
                     float2 otherPos = new float2(otherTransform.Position.x, otherTransform.Position.y);
                     float distanceSq = math.distancesq(myPos, otherPos);
 
-                    if (distanceSq < bestDistanceSq)
+                    // Categorize target: soldier (PlayerUnit) vs crystal
+                    bool isUnit = PlayerUnitLookup.HasComponent(other);
+                    bool isCrystal = CrystalLookup.HasComponent(other);
+
+                    if (isUnit && distanceSq < bestUnitDistanceSq)
                     {
-                        bestDistanceSq = distanceSq;
-                        bestTarget = other;
+                        // Prefer soldiers - they are primary targets
+                        bestUnitDistanceSq = distanceSq;
+                        bestUnitTarget = other;
+                    }
+                    else if (isCrystal && distanceSq < bestCrystalDistanceSq)
+                    {
+                        // Crystal is fallback target
+                        bestCrystalDistanceSq = distanceSq;
+                        bestCrystalTarget = other;
                     }
 
                 } while (SpatialHashMap.TryGetNextValue(out other, ref iterator));
             }
         }
 
-        return bestTarget;
+        // Priority: return soldier if found, otherwise crystal
+        if (bestUnitTarget != Entity.Null)
+            return bestUnitTarget;
+
+        return bestCrystalTarget;
     }
 }
 
