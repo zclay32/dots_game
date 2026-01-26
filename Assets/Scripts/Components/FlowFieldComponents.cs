@@ -99,10 +99,78 @@ public static class FlowFieldData
     {
         int2 cell = WorldToGrid(worldPos);
         int index = GridToIndex(cell);
-        
+
         if (index < 0 || index >= FlowDirections.Length)
             return float2.zero;
-        
+
+        return FlowDirections[index];
+    }
+}
+
+/// <summary>
+/// Static class to hold soldier destination flow field data.
+/// Shares Walkable grid with FlowFieldData but has its own flow directions.
+/// Used for soldier pathfinding to click destinations.
+/// </summary>
+public static class SoldierFlowFieldData
+{
+    // Direction to move from each cell toward the soldier destination
+    public static NativeArray<float2> FlowDirections;
+
+    // Cost to reach target from each cell
+    public static NativeArray<int> IntegrationField;
+
+    // Current destination (to detect when it changes)
+    public static float2 CurrentDestination;
+
+    // Whether the flow field has been generated
+    public static bool HasDestination;
+
+    public static bool IsCreated => FlowDirections.IsCreated;
+
+    public static void Create()
+    {
+        if (!FlowFieldData.IsCreated)
+            return;
+
+        Dispose();
+
+        int totalCells = FlowFieldData.GridWidth * FlowFieldData.GridHeight;
+        FlowDirections = new NativeArray<float2>(totalCells, Allocator.Persistent);
+        IntegrationField = new NativeArray<int>(totalCells, Allocator.Persistent);
+
+        // Initialize
+        for (int i = 0; i < totalCells; i++)
+        {
+            IntegrationField[i] = int.MaxValue;
+            FlowDirections[i] = float2.zero;
+        }
+
+        HasDestination = false;
+        CurrentDestination = float2.zero;
+    }
+
+    public static void Dispose()
+    {
+        if (FlowDirections.IsCreated) FlowDirections.Dispose();
+        if (IntegrationField.IsCreated) IntegrationField.Dispose();
+        HasDestination = false;
+    }
+
+    /// <summary>
+    /// Get flow direction at world position for soldier pathfinding
+    /// </summary>
+    public static float2 GetFlowDirection(float2 worldPos)
+    {
+        if (!IsCreated || !HasDestination)
+            return float2.zero;
+
+        int2 cell = FlowFieldData.WorldToGrid(worldPos);
+        int index = FlowFieldData.GridToIndex(cell);
+
+        if (index < 0 || index >= FlowDirections.Length)
+            return float2.zero;
+
         return FlowDirections[index];
     }
 }
