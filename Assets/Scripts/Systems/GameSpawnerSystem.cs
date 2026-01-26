@@ -73,22 +73,24 @@ public partial struct GameSpawnerSystem : ISystem
 
     private void SpawnSoldiers(ref EntityCommandBuffer ecb, ref Random random, GameConfig config, PrefabLibrary prefabs)
     {
-        // Spawn soldiers in a ring around the crystal (not on top of it)
-        // Crystal is 4x4 tiles, so min radius of 6 keeps soldiers clear
-        const float soldierMinRadius = 6f;
-        const float soldierMaxRadius = 12f;
+        // Spawn soldiers in a tight cluster just below the crystal
+        // Crystal is 4x4 tiles (~4 units), so offset by 5 units below center
+        const float spawnOffsetY = -5f;
+        const float clusterRadius = 2f;
+
+        float2 spawnCenter = new float2(config.MapCenter.x, config.MapCenter.y + spawnOffsetY);
 
         for (int i = 0; i < config.SoldierCount; i++)
         {
             var soldier = ecb.Instantiate(prefabs.SoldierPrefab);
 
-            // Random position in ring around center
+            // Random position in small cluster below crystal
             float angle = random.NextFloat(0f, math.PI * 2f);
-            float distance = random.NextFloat(soldierMinRadius, soldierMaxRadius);
+            float distance = random.NextFloat(0f, clusterRadius);
 
             float3 position = new float3(
-                config.MapCenter.x + math.cos(angle) * distance,
-                config.MapCenter.y + math.sin(angle) * distance,
+                spawnCenter.x + math.cos(angle) * distance,
+                spawnCenter.y + math.sin(angle) * distance,
                 0f
             );
 
@@ -98,7 +100,7 @@ public partial struct GameSpawnerSystem : ISystem
             ecb.SetComponent(soldier, new TargetPosition { HasTarget = false });
         }
 
-        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.SoldierCount} soldiers in ring (radius {soldierMinRadius}-{soldierMaxRadius})");
+        UnityEngine.Debug.Log($"[GameSpawner] Spawned {config.SoldierCount} soldiers below crystal");
     }
 
     private void SpawnZombies(ref EntityCommandBuffer ecb, ref Random random, GameConfig config, PrefabLibrary prefabs)
