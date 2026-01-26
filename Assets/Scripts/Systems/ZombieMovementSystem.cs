@@ -17,19 +17,25 @@ using Unity.Transforms;
 /// Uses Burst-compiled parallel job for performance.
 /// Target positions are cached by ZombieStateMachineSystem to avoid ComponentLookup aliasing.
 /// </summary>
-[BurstCompile]
 [UpdateAfter(typeof(ZombieStateMachineSystem))]
 [UpdateBefore(typeof(FacingRotationSystem))]
 public partial struct ZombieMovementSystem : ISystem
 {
-    [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
+        bool flowFieldReady = FlowFieldData.IsCreated;
 
         new MoveZombiesByStateJob
         {
-            DeltaTime = deltaTime
+            DeltaTime = deltaTime,
+            FlowFieldReady = flowFieldReady,
+            GridWidth = flowFieldReady ? FlowFieldData.GridWidth : 0,
+            GridHeight = flowFieldReady ? FlowFieldData.GridHeight : 0,
+            CellSize = flowFieldReady ? FlowFieldData.CellSize : 1f,
+            WorldOffset = flowFieldReady ? FlowFieldData.WorldOffset : float2.zero,
+            Walkable = flowFieldReady ? FlowFieldData.Walkable : default,
+            FlowDirections = flowFieldReady ? FlowFieldData.FlowDirections : default
         }.ScheduleParallel();
     }
 }
@@ -38,6 +44,13 @@ public partial struct ZombieMovementSystem : ISystem
 public partial struct MoveZombiesByStateJob : IJobEntity
 {
     public float DeltaTime;
+    public bool FlowFieldReady;
+    public int GridWidth;
+    public int GridHeight;
+    public float CellSize;
+    public float2 WorldOffset;
+    [ReadOnly] public NativeArray<bool> Walkable;
+    [ReadOnly] public NativeArray<float2> FlowDirections;
 
     void Execute(ref LocalTransform transform, ref Velocity velocity, ref TargetPosition targetPosition,
                  in MoveSpeed speed, in ZombieCombatState combatState, in ZombieCombatConfig combatConfig,
@@ -131,16 +144,92 @@ public partial struct MoveZombiesByStateJob : IJobEntity
 
         if (distance > 0.1f)
         {
-            float2 normalizedDir = direction / distance;
-            velocity.Value = normalizedDir * moveSpeed;
+            float2 moveDir;
+
+            // Use flow field for pathfinding around obstacles
+            if (FlowFieldReady && FlowDirections.IsCreated)
+            {
+                float2 flowDir = GetFlowDirection(currentPos);
+                if (math.lengthsq(flowDir) > 0.01f)
+                {
+                    moveDir = flowDir;
+                }
+                else
+                {
+                    moveDir = direction / distance;
+                }
+            }
+            else
+            {
+                moveDir = direction / distance;
+            }
+
+            velocity.Value = moveDir * moveSpeed;
 
             float2 movement = velocity.Value * deltaTime;
-            transform.Position.x += movement.x;
-            transform.Position.y += movement.y;
+            float2 newPos = currentPos + movement;
+
+            // Check walkability and slide along obstacles if needed
+            if (!FlowFieldReady || !Walkable.IsCreated || IsWalkable(newPos))
+            {
+                transform.Position.x = newPos.x;
+                transform.Position.y = newPos.y;
+            }
+            else
+            {
+                // Try sliding along X axis only
+                float2 slideX = new float2(currentPos.x + movement.x, currentPos.y);
+                if (IsWalkable(slideX))
+                {
+                    transform.Position.x = slideX.x;
+                }
+                else
+                {
+                    // Try sliding along Y axis only
+                    float2 slideY = new float2(currentPos.x, currentPos.y + movement.y);
+                    if (IsWalkable(slideY))
+                    {
+                        transform.Position.y = slideY.y;
+                    }
+                    // If neither works, don't move (stay in place)
+                }
+            }
         }
         else
         {
             velocity.Value = float2.zero;
         }
+    }
+
+    bool IsWalkable(float2 worldPos)
+    {
+        float2 localPos = worldPos + WorldOffset;
+        int x = (int)math.floor(localPos.x / CellSize);
+        int y = (int)math.floor(localPos.y / CellSize);
+
+        if (x < 0 || x >= GridWidth || y < 0 || y >= GridHeight)
+            return false;
+
+        int index = y * GridWidth + x;
+        if (index < 0 || index >= Walkable.Length)
+            return false;
+
+        return Walkable[index];
+    }
+
+    float2 GetFlowDirection(float2 worldPos)
+    {
+        float2 localPos = worldPos + WorldOffset;
+        int x = (int)math.floor(localPos.x / CellSize);
+        int y = (int)math.floor(localPos.y / CellSize);
+
+        if (x < 0 || x >= GridWidth || y < 0 || y >= GridHeight)
+            return float2.zero;
+
+        int index = y * GridWidth + x;
+        if (index < 0 || index >= FlowDirections.Length)
+            return float2.zero;
+
+        return FlowDirections[index];
     }
 }

@@ -83,6 +83,9 @@ public partial struct ObstacleRegistrationSystem : ISystem
         _registered = true;
         _lastObstacleCount = obstacleCount;
 
+        // Trigger flow field regeneration so zombies path around obstacles
+        FlowFieldData.NeedsRegeneration = true;
+
         UnityEngine.Debug.Log($"[ObstacleRegistration] Registered {obstacleCount} obstacles, marked {totalCellsMarked} cells as unwalkable");
     }
 }
