@@ -5,12 +5,12 @@ using Unity.Mathematics;
 using Unity.Transforms;
 
 /// <summary>
-/// System that updates fog of war visibility based on soldier positions.
+/// System that updates fog of war visibility based on entities with VisionSource.
 /// Uses frame skipping for performance optimization.
 ///
 /// Algorithm:
 /// 1. Decay all Visible cells to Explored
-/// 2. For each soldier, mark cells within vision radius as Visible
+/// 2. For each entity with VisionSource, mark cells within vision radius as Visible
 /// 3. FogOfWarManager syncs changes to tilemap in LateUpdate
 /// </summary>
 [UpdateInGroup(typeof(SimulationSystemGroup))]
@@ -47,13 +47,12 @@ public partial class FogOfWarSystem : SystemBase
         DecayVisibility(visibilityGrid, dirtyFlags, gridWidth, gridHeight,
             minCellX, minCellY, mapRadius);
 
-        // Step 2: Mark cells visible for each soldier with vision
+        // Step 2: Mark cells visible for each entity with vision (soldiers, buildings, etc.)
         float cellSizeX = gridManager.cellSize.x;
         float cellSizeY = gridManager.cellSize.y;
 
         foreach (var (transform, visionSource) in
-            SystemAPI.Query<RefRO<LocalTransform>, RefRO<VisionSource>>()
-            .WithAll<PlayerUnit>())
+            SystemAPI.Query<RefRO<LocalTransform>, RefRO<VisionSource>>())
         {
             float3 worldPos = transform.ValueRO.Position;
             float visionRadius = visionSource.ValueRO.VisionRadius;
