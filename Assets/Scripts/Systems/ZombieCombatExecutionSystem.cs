@@ -40,6 +40,7 @@ public partial struct ZombieCombatExecutionSystem : ISystem
         var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         var healthLookup = SystemAPI.GetComponentLookup<Health>(true);
         var factionLookup = SystemAPI.GetComponentLookup<Faction>(true);
+        var targetRadiusLookup = SystemAPI.GetComponentLookup<TargetRadius>(true);
 
         // Schedule parallel cone attack job
         var coneAttackJob = new ZombieConeAttackJob
@@ -48,6 +49,7 @@ public partial struct ZombieCombatExecutionSystem : ISystem
             TransformLookup = transformLookup,
             HealthLookup = healthLookup,
             FactionLookup = factionLookup,
+            TargetRadiusLookup = targetRadiusLookup,
             DamageQueue = DamageEventQueue.GetParallelWriter(),
             CellSize = config.CellSize,
             WorldOffset = config.WorldOffset
@@ -68,6 +70,7 @@ public partial struct ZombieConeAttackJob : IJobEntity
     [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
     [ReadOnly] public ComponentLookup<Health> HealthLookup;
     [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+    [ReadOnly] public ComponentLookup<TargetRadius> TargetRadiusLookup;
     public NativeQueue<DamageEvent>.ParallelWriter DamageQueue;
     public float CellSize;
     public float2 WorldOffset;
@@ -97,8 +100,10 @@ public partial struct ZombieConeAttackJob : IJobEntity
         float attackDamage = combatConfig.AttackDamage;
 
         // Find and damage all targets in cone using spatial hash
+        // Use larger search radius to find large targets (like crystal with TargetRadius)
+        // 4 cells covers up to 4 units, enough for a 4x4 crystal plus attack range
         int2 myCell = SpatialHashHelper.WorldToCell(myPos, CellSize, WorldOffset);
-        int cellRadius = (int)math.ceil(attackRange / CellSize);
+        int cellRadius = math.max((int)math.ceil(attackRange / CellSize), 4);
 
         for (int x = -cellRadius; x <= cellRadius; x++)
         {
@@ -124,21 +129,36 @@ public partial struct ZombieConeAttackJob : IJobEntity
                     var otherTransform = TransformLookup[other];
                     float2 otherPos = new float2(otherTransform.Position.x, otherTransform.Position.y);
 
-                    // Distance check using squared distance (avoid sqrt)
-                    float distanceSq = math.distancesq(myPos, otherPos);
-                    if (distanceSq > attackRangeSq) continue;
+                    // Get target radius for large entities (like crystal)
+                    float targetRadius = 0f;
+                    if (TargetRadiusLookup.HasComponent(other))
+                    {
+                        targetRadius = TargetRadiusLookup[other].Value;
+                    }
 
-                    // Check if in cone
+                    // Distance check using squared distance (avoid sqrt)
+                    // Account for target radius - zombie can hit the edge of large targets
+                    float effectiveRange = attackRange + targetRadius;
+                    float effectiveRangeSq = effectiveRange * effectiveRange;
+                    float distanceSq = math.distancesq(myPos, otherPos);
+                    if (distanceSq > effectiveRangeSq) continue;
+
+                    // Check if in cone (skip for large targets - zombie can hit any exposed edge)
                     float2 toTarget = math.normalizesafe(otherPos - myPos);
-                    float dot = math.dot(facing, toTarget);
-                    if (dot < coneDot) continue;
+                    if (targetRadius < 0.5f)
+                    {
+                        // Small target (soldiers) - use cone check
+                        float dot = math.dot(facing, toTarget);
+                        if (dot < coneDot) continue;
+                    }
+                    // Large targets (crystal) - skip cone check, zombie can hit from any angle
 
                     // Skip dead units (check after geometric tests since it requires lookup)
                     if (!HealthLookup.HasComponent(other)) continue;
                     var health = HealthLookup[other];
                     if (health.IsDead) continue;
 
-                    // Target is in attack cone - queue damage event!
+                    // Target is in attack range - queue damage event!
                     DamageQueue.Enqueue(new DamageEvent
                     {
                         Target = other,

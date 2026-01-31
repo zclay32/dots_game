@@ -22,8 +22,8 @@ public class ZombieAuthoring : MonoBehaviour
     public float attackConeAngle = 45f; // Degrees - width of damage cone
 
     [Header("AI State")]
-    public float alertRadius = 3f;    // Detection radius when dormant/idle
-    public float aggroRadius = 15f;   // Detection radius when alert/chasing
+    public float aggroRadius = 5f;    // Detection radius - how close to notice a target
+    public float chaseRadius = 8f;    // Max chase distance - how far to chase before giving up
     public float wanderRadius = 2f;   // Max distance from spawn when wandering (small circle)
     public float wanderSpeedMultiplier = 0.25f; // Fraction of max speed when wandering
 
@@ -98,8 +98,8 @@ public class ZombieAuthoring : MonoBehaviour
             AddComponent(entity, new ZombieState
             {
                 State = ZombieAIState.Dormant,
-                AlertRadius = authoring.alertRadius,
-                ChaseRadius = authoring.aggroRadius,
+                AggroRadius = authoring.aggroRadius,
+                ChaseRadius = authoring.chaseRadius,
                 AlertTimer = 0
             });
 
@@ -126,7 +126,7 @@ public class ZombieAuthoring : MonoBehaviour
                 AttackWindup = authoring.attackWindup,
                 AttackConeAngle = authoring.attackConeAngle,
                 AggroRadius = authoring.aggroRadius,
-                AlertRadius = authoring.alertRadius,
+                ChaseRadius = authoring.chaseRadius,
                 WanderRadius = authoring.wanderRadius,
                 WanderSpeedMultiplier = authoring.wanderSpeedMultiplier,
                 SpawnPosition = spawnPosition

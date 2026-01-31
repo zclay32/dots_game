@@ -37,6 +37,7 @@ public partial struct ZombieStateMachineSystem : ISystem
 
         var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         var healthLookup = SystemAPI.GetComponentLookup<Health>(true);
+        var targetRadiusLookup = SystemAPI.GetComponentLookup<TargetRadius>(true);
 
         // PASS 1: Burst-compiled parallel job for all state processing
         state.Dependency = new ZombieStateUpdateJob
@@ -44,7 +45,8 @@ public partial struct ZombieStateMachineSystem : ISystem
             DeltaTime = deltaTime,
             RandomSeed = _randomSeed,
             TransformLookup = transformLookup,
-            HealthLookup = healthLookup
+            HealthLookup = healthLookup,
+            TargetRadiusLookup = targetRadiusLookup
         }.ScheduleParallel(state.Dependency);
 
         // PASS 2: Target search for Idle/Wandering zombies (PARALLEL, every N frames)
@@ -57,6 +59,8 @@ public partial struct ZombieStateMachineSystem : ISystem
             {
                 var config = SystemAPI.GetSingleton<SpatialHashConfig>();
                 var factionLookup = SystemAPI.GetComponentLookup<Faction>(true);
+                var playerUnitLookup = SystemAPI.GetComponentLookup<PlayerUnit>(true);
+                var crystalLookup = SystemAPI.GetComponentLookup<Crystal>(true);
 
                 // Schedule parallel target search job - NO Complete() needed!
                 state.Dependency = new ZombieTargetSearchJob
@@ -65,6 +69,8 @@ public partial struct ZombieStateMachineSystem : ISystem
                     TransformLookup = transformLookup,
                     HealthLookup = healthLookup,
                     FactionLookup = factionLookup,
+                    PlayerUnitLookup = playerUnitLookup,
+                    CrystalLookup = crystalLookup,
                     CellSize = config.CellSize,
                     WorldOffset = config.WorldOffset
                 }.ScheduleParallel(state.Dependency);
@@ -76,6 +82,7 @@ public partial struct ZombieStateMachineSystem : ISystem
 /// <summary>
 /// Parallel job for zombie target searching.
 /// Uses spatial hash to find nearest player target for idle/wandering zombies.
+/// Implements priority targeting: soldiers (PlayerUnit) are preferred over the crystal.
 /// </summary>
 [BurstCompile]
 public partial struct ZombieTargetSearchJob : IJobEntity
@@ -84,6 +91,8 @@ public partial struct ZombieTargetSearchJob : IJobEntity
     [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
     [ReadOnly] public ComponentLookup<Health> HealthLookup;
     [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+    [ReadOnly] public ComponentLookup<PlayerUnit> PlayerUnitLookup;
+    [ReadOnly] public ComponentLookup<Crystal> CrystalLookup;
     public float CellSize;
     public float2 WorldOffset;
 
@@ -105,9 +114,9 @@ public partial struct ZombieTargetSearchJob : IJobEntity
             return;
 
         float2 myPos = new float2(transform.Position.x, transform.Position.y);
-        float searchRadius = combatConfig.AlertRadius;
 
-        Entity target = FindTarget(myPos, searchRadius);
+        // Use AggroRadius for soldiers (can sneak past), ChaseRadius for crystal (large visible structure)
+        Entity target = FindTarget(myPos, combatConfig.AggroRadius, combatConfig.ChaseRadius);
 
         if (target != Entity.Null)
         {
@@ -126,13 +135,19 @@ public partial struct ZombieTargetSearchJob : IJobEntity
         }
     }
 
-    private Entity FindTarget(float2 myPos, float searchRadius)
+    private Entity FindTarget(float2 myPos, float soldierRadius, float crystalRadius)
     {
         int2 myCell = SpatialHashHelper.WorldToCell(myPos, CellSize, WorldOffset);
-        int cellRadius = (int)math.ceil(searchRadius / CellSize);
+        // Use larger radius for cell search to ensure we find the crystal
+        float maxRadius = math.max(soldierRadius, crystalRadius);
+        int cellRadius = (int)math.ceil(maxRadius / CellSize);
 
-        Entity bestTarget = Entity.Null;
-        float bestDistanceSq = searchRadius * searchRadius;
+        // Track best unit (soldier) and best crystal separately with different search radii
+        Entity bestUnitTarget = Entity.Null;
+        float bestUnitDistanceSq = soldierRadius * soldierRadius;
+
+        Entity bestCrystalTarget = Entity.Null;
+        float bestCrystalDistanceSq = crystalRadius * crystalRadius;
 
         for (int x = -cellRadius; x <= cellRadius; x++)
         {
@@ -146,7 +161,7 @@ public partial struct ZombieTargetSearchJob : IJobEntity
 
                 do
                 {
-                    // Skip non-player units
+                    // Skip non-player faction
                     if (!FactionLookup.HasComponent(other)) continue;
                     var faction = FactionLookup[other];
                     if (faction.Value != FactionType.Player) continue;
@@ -162,17 +177,32 @@ public partial struct ZombieTargetSearchJob : IJobEntity
                     float2 otherPos = new float2(otherTransform.Position.x, otherTransform.Position.y);
                     float distanceSq = math.distancesq(myPos, otherPos);
 
-                    if (distanceSq < bestDistanceSq)
+                    // Categorize target: soldier (PlayerUnit) vs crystal
+                    bool isUnit = PlayerUnitLookup.HasComponent(other);
+                    bool isCrystal = CrystalLookup.HasComponent(other);
+
+                    if (isUnit && distanceSq <= bestUnitDistanceSq)
                     {
-                        bestDistanceSq = distanceSq;
-                        bestTarget = other;
+                        // Prefer soldiers - they are primary targets
+                        bestUnitDistanceSq = distanceSq;
+                        bestUnitTarget = other;
+                    }
+                    else if (isCrystal && distanceSq <= bestCrystalDistanceSq)
+                    {
+                        // Crystal is fallback target
+                        bestCrystalDistanceSq = distanceSq;
+                        bestCrystalTarget = other;
                     }
 
                 } while (SpatialHashMap.TryGetNextValue(out other, ref iterator));
             }
         }
 
-        return bestTarget;
+        // Priority: return soldier if found, otherwise crystal
+        if (bestUnitTarget != Entity.Null)
+            return bestUnitTarget;
+
+        return bestCrystalTarget;
     }
 }
 
@@ -187,6 +217,7 @@ public partial struct ZombieStateUpdateJob : IJobEntity
     public uint RandomSeed;
     [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
     [ReadOnly] public ComponentLookup<Health> HealthLookup;
+    [ReadOnly] public ComponentLookup<TargetRadius> TargetRadiusLookup;
 
     void Execute(ref ZombieCombatState combatState, in ZombieCombatConfig combatConfig,
                  in LocalTransform transform, in Velocity velocity, in EnemyUnit enemyTag,
@@ -194,6 +225,13 @@ public partial struct ZombieStateUpdateJob : IJobEntity
     {
         float2 myPos = new float2(transform.Position.x, transform.Position.y);
         var random = Random.CreateFromIndex(RandomSeed + (uint)entityIndex);
+
+        // Get target radius if targeting a large entity (like crystal)
+        float targetRadius = 0f;
+        if (combatState.HasTarget && TargetRadiusLookup.HasComponent(combatState.CurrentTarget))
+        {
+            targetRadius = TargetRadiusLookup[combatState.CurrentTarget].Value;
+        }
 
         // Validate current target
         if (combatState.HasTarget)
@@ -222,11 +260,11 @@ public partial struct ZombieStateUpdateJob : IJobEntity
                 break;
 
             case ZombieCombatAIState.Chasing:
-                ProcessChasingState(ref combatState, combatConfig, myPos, velocity, ref random);
+                ProcessChasingState(ref combatState, combatConfig, myPos, velocity, ref random, targetRadius);
                 break;
 
             case ZombieCombatAIState.WindingUp:
-                ProcessWindingUpState(ref combatState, combatConfig, myPos);
+                ProcessWindingUpState(ref combatState, combatConfig, myPos, targetRadius);
                 break;
 
             case ZombieCombatAIState.Attacking:
@@ -234,7 +272,7 @@ public partial struct ZombieStateUpdateJob : IJobEntity
                 break;
 
             case ZombieCombatAIState.Cooldown:
-                ProcessCooldownState(ref combatState, combatConfig, myPos);
+                ProcessCooldownState(ref combatState, combatConfig, myPos, targetRadius);
                 break;
         }
 
@@ -325,7 +363,7 @@ public partial struct ZombieStateUpdateJob : IJobEntity
     }
 
     private void ProcessChasingState(ref ZombieCombatState combatState, ZombieCombatConfig config,
-        float2 myPos, Velocity velocity, ref Random random)
+        float2 myPos, Velocity velocity, ref Random random, float targetRadius)
     {
         if (combatState.HasTarget)
         {
@@ -333,8 +371,22 @@ public partial struct ZombieStateUpdateJob : IJobEntity
             float2 targetPos = combatState.CachedTargetPos;
             float distance = math.distance(myPos, targetPos);
 
+            // Check if target has moved beyond chase radius - give up chase
+            // Account for target radius so large entities don't lose aggro prematurely
+            if (distance > config.ChaseRadius + targetRadius)
+            {
+                combatState.HasTarget = false;
+                combatState.CurrentTarget = Entity.Null;
+                combatState.HasEngagedTarget = false;
+                combatState.State = ZombieCombatAIState.Idle;
+                combatState.StateTimer = random.NextFloat(2f, 5f);
+                return;
+            }
+
             // Check if in attack range and stopped
-            bool inRange = distance <= config.AttackRange * 1.1f;
+            // Account for target radius so zombies can attack large entities from their edge
+            float effectiveAttackRange = config.AttackRange * 1.1f + targetRadius;
+            bool inRange = distance <= effectiveAttackRange;
             bool stopped = math.lengthsq(velocity.Value) < 0.01f;
 
             if (inRange && stopped)
@@ -377,7 +429,7 @@ public partial struct ZombieStateUpdateJob : IJobEntity
         }
     }
 
-    private void ProcessWindingUpState(ref ZombieCombatState combatState, ZombieCombatConfig config, float2 myPos)
+    private void ProcessWindingUpState(ref ZombieCombatState combatState, ZombieCombatConfig config, float2 myPos, float targetRadius)
     {
         if (!combatState.HasTarget)
         {
@@ -389,7 +441,9 @@ public partial struct ZombieStateUpdateJob : IJobEntity
         float2 targetPos = combatState.CachedTargetPos;
         float distance = math.distance(myPos, targetPos);
 
-        if (distance > config.AttackRange * 1.2f)
+        // Account for target radius when checking if target moved out of range
+        float effectiveAttackRange = config.AttackRange * 1.2f + targetRadius;
+        if (distance > effectiveAttackRange)
         {
             combatState.State = ZombieCombatAIState.Chasing;
             return;
@@ -403,7 +457,7 @@ public partial struct ZombieStateUpdateJob : IJobEntity
         }
     }
 
-    private void ProcessCooldownState(ref ZombieCombatState combatState, ZombieCombatConfig config, float2 myPos)
+    private void ProcessCooldownState(ref ZombieCombatState combatState, ZombieCombatConfig config, float2 myPos, float targetRadius)
     {
         if (!combatState.HasTarget)
         {
@@ -418,7 +472,9 @@ public partial struct ZombieStateUpdateJob : IJobEntity
             float2 targetPos = combatState.CachedTargetPos;
             float distance = math.distance(myPos, targetPos);
 
-            if (distance <= config.AttackRange * 1.1f)
+            // Account for target radius when checking if still in attack range
+            float effectiveAttackRange = config.AttackRange * 1.1f + targetRadius;
+            if (distance <= effectiveAttackRange)
             {
                 combatState.State = ZombieCombatAIState.Attacking;
             }
